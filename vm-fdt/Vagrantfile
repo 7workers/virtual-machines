@@ -15,7 +15,6 @@
 #
 #
 
-
 vagrant_root = File.dirname(__FILE__)
 disk = "#{vagrant_root}/vm-fdt-db.vdi"
 
@@ -521,6 +520,3 @@ SHELL
 #=end
 
 end
-
-
-
