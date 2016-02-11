@@ -15,6 +15,7 @@
 #
 #
 
+
 vagrant_root = File.dirname(__FILE__)
 disk = "#{vagrant_root}/vm-fdt-db.vdi"
 
@@ -68,7 +69,7 @@ cat > /etc/rc.d/rc.local <<EOL
 
 EOL
 chmod a+x /etc/rc.d/rc.local
-mkdir /vagrant/logs
+mkdir -p /vagrant/logs
 chmod a+rw /vagrant/logs/
 SHELL
 #=end
@@ -79,7 +80,7 @@ SHELL
 parted /dev/sdb mklabel msdos
 parted /dev/sdb mkpart primary 512 100%
 mkfs.xfs /dev/sdb1
-mkdir /mnt/disk
+mkdir -p /mnt/disk
 echo `blkid /dev/sdb1 | awk '{print$2}' | sed -e 's/"//g'` /mnt/disk xfs noatime,nobarrier 0 0 >> /etc/fstab
 mount /mnt/disk
 SHELL
@@ -207,7 +208,7 @@ SHELL
   # PHP modules
   config.vm.provision "shell", inline: <<-SHELL
 /usr/local/bin/pecl config-set php_ini /usr/local/lib/php.ini
-/usr/local/bin/pecl install memcached
+printf "\n" | /usr/local/bin/pecl install memcached
 /usr/local/bin/pecl install mongo-1.6.9
 /usr/local/bin/pecl install xdebug
 /usr/local/bin/pecl install amqp-1.6.1
@@ -396,6 +397,29 @@ SHELL
 #=end
 
 #=begin
+  # vhost default
+  config.vm.provision "shell", inline: <<-SHELL
+cat > /etc/httpd/conf.d/vm-fdt.conf <<EOL
+<VirtualHost *:80>
+    DocumentRoot /var/www/html
+    ServerName vm-fdt
+    RewriteEngine On
+</VirtualHost>
+EOL
+echo "127.0.0.1 vm-fdt" >> /etc/hosts
+cat >> /var/www/html/index.html <<EOL
+<h1>Welcome to VM-FDT!</h1>
+<a href="http://vm-fdt/phpmyadmin/">PhpMyAdmin</a><br/>
+<a href="http://vm-fdt/rockmongo/">RockMongo</a><br/>
+<a href="http://vm-fdt:1080/">MailCatched</a><br/>
+<hr/>
+Max Deshkevich <7workers@gmail.com>
+EOL
+
+SHELL
+#=end
+
+#=begin
   # vhost FDT
   config.vm.provision "shell", inline: <<-SHELL
 cat >> /etc/httpd/conf.d/fdt.conf <<EOL
@@ -492,8 +516,9 @@ SHELL
 #=begin
   # vhost VME
   config.vm.provision "shell", inline: <<-SHELL
-apachectl retstart
+apachectl restart
 systemctl restart memcached.service
+systemctl restart rabbitmq-server.service
 SHELL
 #=end
 
@@ -502,21 +527,30 @@ SHELL
   config.vm.provision "shell", inline: <<-SHELL
 cat >> /etc/motd <<EOL
 
-
-Welcome to VM-FDT! Please contact Max Deshkevich having any troubles/questions/feedback: 7workers@gmail.com
+Welcome to VM-FDT! Please contact Max Deshkevich having any questions: 7workers@gmail.com
 ------------------------------------------
 hosts :
 192.168.56.118 acp.rg dmt.loc fdt ipspecs rg botmon api.botmon acp.botmon api.ipspecs acp.ipspecs www.ipspecs vme acp.vme api.vme vm-fdt
 
 http://vm-fdt/rockmongo/            http://vm-fdt/phpmyadmin/             http://vm-fdt:1080/ (mailcatcher)
 
-switch to root:  $ sudo su -
+tail -n 50 /vagrant/logs/php_error.log
 
-restart apache: $ sudo apachectl restart
-flush memcache: $ echo 'flush_all' | nc localhost 11211
+$ sudo su -
+$ sudo apachectl restart
+$ echo 'flush_all' | nc localhost 11211
 
 EOL
 SHELL
 #=end
 
+  config.vm.provision "shell", inline: <<-SHELL
+echo ""
+echo "Please clone all necessary projects (vagrant halt, clone ABC, vagrant up):"
+echo ""
+SHELL
+
 end
+
+
+
