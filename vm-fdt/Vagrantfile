@@ -1,13 +1,19 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+# install vagrant plugins:
+#
+# vagrant plugin install vagrant-hostsupdater
+#
+#
+#
+
 # 
 # modify config:
 #
 # sed -c -i "s/\($TARGET_KEY *= *\).*/\1$REPLACEMENT_VALUE/" $CONFIG_FILE
 #
 #
-
 
 
 vagrant_root = File.dirname(__FILE__)
@@ -23,11 +29,15 @@ Vagrant.configure(2) do |config|
   config.vm.network "private_network", ip: "192.168.56.118"
  
   config.vm.synced_folder vagrant_root, "/vagrant/", disabled: true
+  config.vm.synced_folder "#{vagrant_root}/logs", "/vagrant/logs", create: true
   config.vm.synced_folder "#{vagrant_root}/fdt", "/vagrant/fdt", create: true
   config.vm.synced_folder "#{vagrant_root}/ipspecs", "/vagrant/ipspecs", create: true
-  
-  
+  config.vm.synced_folder "#{vagrant_root}/vme", "/vagrant/vme", create: true
+  config.vm.synced_folder "#{vagrant_root}/rguard", "/vagrant/rguard", create: true
+  config.vm.synced_folder "#{vagrant_root}/rockmongo", "/vagrant/rockmongo", create: true
 
+#  config.hostsupdater.aliases = ["fdt", "ipspecs", "acp.rg", "api.ipspecs", "acp.ipspecs", "rg", "vme", "api.vme", "acp.vme"]
+  
   config.vm.provider "virtualbox" do |vb|
 
         vb.memory = "2048"
@@ -41,7 +51,17 @@ Vagrant.configure(2) do |config|
         vb.customize ['storageattach', :id,  '--storagectl', 'IDE Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', disk]
     
   end
-  
+#=begin
+  config.vm.provision "shell", inline: <<-SHELL
+ln -s /mnt/disk/ /home/storage.secondary
+mkdir -p /home/storage.secondary/fdt
+chown vagrant.vagrant /home/storage.secondary/fdt
+echo "cd /vagrant/" >> /home/vagrant/.bash_profile
+SHELL
+#=end
+
+#=begin
+  # general system config and setup
   config.vm.provision "shell", inline: <<-SHELL
 timedatectl set-timezone Europe/Minsk
 cat > /etc/rc.d/rc.local <<EOL
@@ -49,28 +69,112 @@ cat > /etc/rc.d/rc.local <<EOL
 
 EOL
 chmod a+x /etc/rc.d/rc.local
-#
-#
-# install packages
-#
-#
-dnf install -y ruby ruby-devel redhat-rpm-config gcc-c++ rubygems community-mysql-server rabbitmq-server autoconf libmemcached-devel openssl-devel libmcrypt-devel aspell-devel readline-devel tidy-devel gcc parted nano mc httpd httpd-devel libxml2 libxml2-devel bzip2-devel libcurl-devel libjpeg-turbo libjpeg-turbo-devel libpng-devel freetype-devel 
-#
-#
-# attach secondary storage
-#
-#
+mkdir /vagrant/logs
+chmod a+rw /vagrant/logs/
+SHELL
+#=end
+
+#=begin
+  # attach secondary storage
+  config.vm.provision "shell", inline: <<-SHELL
 parted /dev/sdb mklabel msdos
 parted /dev/sdb mkpart primary 512 100%
 mkfs.xfs /dev/sdb1
 mkdir /mnt/disk
 echo `blkid /dev/sdb1 | awk '{print$2}' | sed -e 's/"//g'` /mnt/disk xfs noatime,nobarrier 0 0 >> /etc/fstab
 mount /mnt/disk
-#
-#
-# compile PHP
-#
-#
+SHELL
+#=end
+
+#=begin
+  # install packages
+  config.vm.provision "shell", inline: <<-SHELL
+dnf install -y nc librabbitmq-devel librabbitmq memcached htop words ruby git ruby-devel redhat-rpm-config gcc-c++ rubygems community-mysql-server rabbitmq-server autoconf libmemcached-devel openssl-devel libmcrypt-devel aspell-devel readline-devel tidy-devel gcc parted nano mc httpd httpd-devel libxml2 libxml2-devel bzip2-devel libcurl-devel libjpeg-turbo libjpeg-turbo-devel libpng-devel freetype-devel 
+SHELL
+#=end
+
+#=begin
+  # enable services
+  config.vm.provision "shell", inline: <<-SHELL
+systemctl enable memcached.service
+SHELL
+#=end
+
+#=begin
+  # apache config
+  config.vm.provision "shell", inline: <<-SHELL
+cat  > /etc/httpd/conf/httpd.conf  <<EOL
+ServerRoot "/etc/httpd"
+Listen 80
+LoadModule php5_module        /usr/lib64/httpd/modules/libphp5.so
+Include conf.modules.d/*.conf
+User vagrant
+Group vagrant
+ServerAdmin root@localhost
+<Directory />
+    AllowOverride All
+    Allow from all
+</Directory>
+DocumentRoot "/vagrant/"
+<Directory "/var/www">
+    AllowOverride None
+    Require all granted
+</Directory>
+<Directory "/var/www/html">
+    Options Indexes FollowSymLinks
+    AllowOverride None
+    Require all granted
+</Directory>
+<IfModule dir_module>
+    DirectoryIndex index.html
+</IfModule>
+<Files ".ht*">
+    Require all denied
+</Files>
+ErrorLog "logs/error_log"
+LogLevel warn
+<IfModule log_config_module>
+    LogFormat "%h %l %u %t \\"%r\\" %>s %b \\"%{Referer}i\\" \\"%{User-Agent}i\\"" combined
+    LogFormat "%h %l %u %t \\"%r\\" %>s %b" common
+    <IfModule logio_module>
+      LogFormat "%h %l %u %t \\"%r\\" %>s %b \\"%{Referer}i\\" \\"%{User-Agent}i\\" %I %O" combinedio
+    </IfModule>
+    CustomLog "logs/access_log" combined
+</IfModule>
+<IfModule alias_module>
+    ScriptAlias /cgi-bin/ "/var/www/cgi-bin/"
+</IfModule>
+<Directory "/var/www/cgi-bin">
+    AllowOverride None
+    Options None
+    Require all granted
+</Directory>
+<IfModule mime_module>
+    TypesConfig /etc/mime.types
+    AddType application/x-compress .Z
+    AddType application/x-gzip .gz .tgz
+    AddType text/html .shtml
+    AddOutputFilter INCLUDES .shtml
+</IfModule>
+AddDefaultCharset UTF-8
+<IfModule mime_magic_module>
+    MIMEMagicFile conf/magic
+</IfModule>
+EnableSendfile off
+<Directory /vagrant/>
+ Options +Indexes +FollowSymLinks
+ Allow from all
+</Directory>
+IncludeOptional conf.d/*.conf
+NameVirtualHost *:80
+EOL
+
+SHELL
+#=end
+
+#=begin
+  # compile PHP
+  config.vm.provision "shell", inline: <<-SHELL
 cd /usr/src/
 wget -nv https://php.net/get/php-5.6.7.tar.bz2/from/this/mirror -O php-5.6.7.tar.bz2
 tar -xjf php-5.6.7.tar.bz2
@@ -79,24 +183,42 @@ make clean
 ./configure --with-mysql=mysqlnd --with-mysqli=mysqlnd --with-pdo-mysql=mysqlnd --with-libdir=lib64 --enable-ftp --enable-mbstring --enable-exif --with-openssl --with-pspell --with-jpeg-dir=/usr --with-png-dir=/usr --with-freetype-dir=/usr --with-gd --enable-gd-native-ttf --enable-inline-optimization --with-curl --with-kerberos --with-gettext --with-readline --with-zlib --with-zlib-dir=/usr --with-bz2 --with-mcrypt --with-ldap --with-ldap-sasl --with-tidy --enable-zip --enable-pcntl --enable-soap --enable-calendar --enable-sockets --with-apxs2=/usr/bin/apxs
 make
 make install
-\cp /usr/src/php-5.6.7/php.ini-development /usr/local/lib/php.ini
+\\cp /usr/src/php-5.6.7/php.ini-development /usr/local/lib/php.ini
+sed -c -i "s/\\(short_open_tag *= *\\).*/\\1On/" /usr/local/lib/php.ini
+sed -c -i "s/\\(memory_limit *= *\\).*/\\1512M/" /usr/local/lib/php.ini
+sed -c -i "s/\\(upload_max_filesize *= *\\).*/\\132M/" /usr/local/lib/php.ini
+cat >> /usr/local/lib/php.ini <<EOL
 
-#
-#
-# install PHP modules
-#
-#
-pecl config-set php_ini /usr/local/lib/php.ini
-pecl install memcached
-pecl install mongo-1.6.9
-pecl install xdebug
+error_log = /vagrant/logs/php_error.log
 
+EOL
+cat  > /etc/httpd/conf.d/php.conf  <<EOL
+LoadModule php5_module modules/libphp5.so
+AddHandler php5-script .php
+AddType text/html .php
+DirectoryIndex index.php
+EOL
+
+systemctl enable httpd.service
+apachectl restart
+SHELL
+#=end
+
+#=begin
+  # PHP modules
+  config.vm.provision "shell", inline: <<-SHELL
+/usr/local/bin/pecl config-set php_ini /usr/local/lib/php.ini
+/usr/local/bin/pecl install memcached
+/usr/local/bin/pecl install mongo-1.6.9
+/usr/local/bin/pecl install xdebug
+/usr/local/bin/pecl install amqp-1.6.1
 
 cat >> /usr/local/lib/php.ini <<EOL
 
 extension=memcached.so
 extension=mongo.so
-extension=xdebug.so
+zend_extension=xdebug.so
+extension=amqp.so
 
 [xdebug]
 xdebug.remote_enable=1
@@ -110,43 +232,63 @@ xdebug.profiler_output_dir="/vagrant/xdebug"
 date.timezone = Europe/Minsk
 
 EOL
+apachectl restart
 
-#
-# PhpMyAdmin
-#
+cd /usr/src/
+wget -nv https://phar.phpunit.de/phpunit.phar
+chmod +x phpunit.phar
+mv phpunit.phar /usr/local/bin/phpunit
 
+SHELL
+#=end
+
+#=begin
+  # PhpMyAdmin
+  config.vm.provision "shell", inline: <<-SHELL
 cd /usr/src/
 wget -nv https://files.phpmyadmin.net/phpMyAdmin/4.5.3.1/phpMyAdmin-4.5.3.1-english.tar.bz2
 tar -xjf phpMyAdmin-4.5.3.1-english.tar.bz2
 cp -R phpMyAdmin-4.5.3.1-english /var/www/phpmyadmin
 
 cd /var/www/phpmyadmin/
-cp config.sample.inc.php config.inc.php
+cat > /var/www/phpmyadmin/config.inc.php <<EOL
+<?php
+\\$i = 0;
+\\$i++;
+\\$cfg['Servers'][\\$i]['verbose'] = 'vm-fdt';
+\\$cfg['Servers'][\\$i]['host'] = '127.0.0.1';
+\\$cfg['Servers'][\\$i]['port'] = '';
+\\$cfg['Servers'][\\$i]['socket'] = '';
+\\$cfg['Servers'][\\$i]['connect_type'] = 'tcp';
+\\$cfg['Servers'][\\$i]['auth_type'] = 'config';
+\\$cfg['Servers'][\\$i]['user'] = 'root';
+\\$cfg['Servers'][\\$i]['password'] = '';
+\\$cfg['Servers'][\\$i]['AllowNoPassword'] = true;
+\\$cfg['blowfish_secret'] = '5522d129ef83a1.90473684';
+\\$cfg['DefaultLang'] = 'en';
+\\$cfg['ServerDefault'] = 1;
+\\$cfg['UploadDir'] = '';
+\\$cfg['SaveDir'] = '';
+\\$cfg['CheckConfigurationPermissions'] = false;
+\\$cfg['LoginCookieRecall'] = false;
+\\$cfg['LoginCookieDeleteAll'] = false;
+\\$cfg['UserprefsDeveloperTab'] = true;
+\\$cfg['DBG']['sql'] = true;
+\\$cfg['NavigationDisplayLogo'] = false;
+\\$cfg['UserprefsDisallow'] = array('NavigationDisplayLogo');
+EOL
 
-
-cat  > /etc/httpd/conf.d/phpmyadmin.conf  <<EOL
+cat  > /etc/httpd/conf.d/phpmyadmin.conf <<EOL
 Alias /phpMyAdmin /var/www/phpmyadmin
 Alias /phpmyadmin /var/www/phpmyadmin
 EOL
+apachectl restart
+SHELL
+#=end
 
-
-#
-# setup Apache
-#
-
-cat  > /etc/httpd/conf.d/php.conf  <<EOL
-LoadModule php5_module modules/libphp5.so
-AddHandler php5-script .php
-AddType text/html .php
-DirectoryIndex index.php
-EOL
-
-systemctl enable httpd.service
-
-#
-# setup MongoDb
-#
-
+#=begin
+  # setup MongoDB
+  config.vm.provision "shell", inline: <<-SHELL
 cd /usr/src/
 wget -nv http://downloads.mongodb.org/linux/mongodb-linux-x86_64-amazon-3.0.6.tgz -O mongodb-linux-x86_64-amazon-3.0.6.tgz
 tar -xzf mongodb-linux-x86_64-amazon-3.0.6.tgz
@@ -164,23 +306,69 @@ logpath = /mnt/disk/mongodb/mongo.log
 fork = true
 EOL
 
+ln -s /usr/local/mongodb/bin/mongo /usr/local/bin/mongo
+ln -s /usr/local/mongodb/bin/mongodump /usr/local/bin/mongodump
+ln -s /usr/local/mongodb/bin/mongoexport /usr/local/bin/mongoexport
+ln -s /usr/local/mongodb/bin/mongoimport /usr/local/bin/mongoimport
+ln -s /usr/local/mongodb/bin/mongorestore /usr/local/bin/mongorestore
+
 mkdir /mnt/disk/mongodb
 
 /usr/local/mongodb/bin/mongod -f /etc/mongodb/standalone.conf
 
-#
-# setup MySQL
-#
+SHELL
+#=end
 
-sed -c -i "s/\(datadir *= *\).*/\1\/mnt\/disk\/mysqldata/" /etc/my.cnf.d/community-mysql-server.cnf
-sed -c -i "s/\(log\-error *= *\).*/\1\/mnt\/disk\/mysqld\.log/" /etc/my.cnf.d/community-mysql-server.cnf
+#=begin
+  # setup RockMongo
+  config.vm.provision "shell", inline: <<-SHELL
+cd /vagrant/rockmongo
+git clone https://github.com/7workers/rockmongo.git .
+
+cat > /vagrant/rockmongo/config.php <<EOL
+<?php
+\\$MONGO = array();
+\\$MONGO["features"]["log_query"] = "on";
+\\$MONGO["features"]["theme"] = "default";
+\\$MONGO["features"]["plugins"] = "on";
+\\$i = 0;
+\\$MONGO["servers"][\\$i]["mongo_name"] = "vm-fdt";
+\\$MONGO["servers"][\\$i]["mongo_host"] = "127.0.0.1";
+\\$MONGO["servers"][\\$i]["mongo_port"] = "27017";
+\\$MONGO["servers"][\\$i]["mongo_timeout"] = 0;
+\\$MONGO["servers"][\\$i]["mongo_auth"] = false;
+\\$MONGO["servers"][\\$i]["control_auth"] = false;
+\\$MONGO["servers"][\\$i]["control_users"]["admin"] = "admin";
+\\$MONGO["servers"][\\$i]["ui_only_dbs"] = "";
+\\$MONGO["servers"][\\$i]["ui_hide_dbs"] = "";
+\\$MONGO["servers"][\\$i]["ui_hide_collections"] = "";
+\\$MONGO["servers"][\\$i]["ui_hide_system_collections"] = false;
+
+EOL
+
+cat  > /etc/httpd/conf.d/rockmongo.conf <<EOL
+Alias /rockmongo /vagrant/rockmongo
+EOL
+apachectl restart
+
+SHELL
+#=end
+
+
+#=begin
+  # setup MySQL
+  config.vm.provision "shell", inline: <<-SHELL
+sed -c -i "s/\\(datadir *= *\\).*/\\1\\/mnt\\/disk\\/mysqldata/" /etc/my.cnf.d/community-mysql-server.cnf
+sed -c -i "s/\\(log\\-error *= *\\).*/\\1\\/mnt\\/disk\\/mysqld\\.log/" /etc/my.cnf.d/community-mysql-server.cnf
 systemctl enable mysqld.service
 systemctl restart mysqld.service
 
-#
-# setup mailcatcher
-#
+SHELL
+#=end
 
+#=begin
+  # setup mailcatcher
+  config.vm.provision "shell", inline: <<-SHELL
 gem install mailcatcher
 
 cat >> /etc/rc.d/rc.local <<EOL
@@ -193,6 +381,12 @@ EOL
 
 /usr/local/bin/mailcatcher --http-ip 192.168.56.118
 
+SHELL
+#=end
+
+#=begin
+  # etc
+  config.vm.provision "shell", inline: <<-SHELL
 #
 #
 #
@@ -200,6 +394,131 @@ EOL
 apachectl restart
 
 SHELL
+#=end
+
+#=begin
+  # vhost FDT
+  config.vm.provision "shell", inline: <<-SHELL
+cat >> /etc/httpd/conf.d/fdt.conf <<EOL
+<VirtualHost *:80>
+    DocumentRoot /vagrant/fdt/code/web
+    ServerName fdt
+    ServerAlias www.fdt
+    ErrorLog    /vagrant/logs/fdt-error.log
+    CustomLog   /vagrant/logs/fdt-access.log common
+    RewriteEngine On
+</VirtualHost>
+EOL
+echo "127.0.0.1 fdt www.fdt" >> /etc/hosts
+SHELL
+#=end
+
+#=begin
+  # vhost IpSpecs
+  config.vm.provision "shell", inline: <<-SHELL
+cat >> /etc/httpd/conf.d/ipspecs.conf <<EOL
+<VirtualHost *:80>
+    DocumentRoot /vagrant/ipspecs/code/docroot_acp
+    ServerName ipspecs
+    ServerAlias acp.ipspecs
+    ErrorLog    /vagrant/logs/ipspecs-acp-error.log
+    CustomLog   /vagrant/logs/ipspecs-acp-access.log common
+    RewriteEngine On
+</VirtualHost>
+<VirtualHost *:80>
+    DocumentRoot /vagrant/ipspecs/code/docroot_api
+    ServerName api.ipspecs
+    ErrorLog    /vagrant/logs/ipspecs-api-error.log
+    CustomLog   /vagrant/logs/ipspecs-api-access.log common
+    RewriteEngine On
+</VirtualHost>
+<VirtualHost *:80>
+    DocumentRoot /vagrant/ipspecs/code/docroot_website
+    ServerName www.ipspecs
+    ErrorLog    /vagrant/logs/ipspecs-www-error.log
+    CustomLog   /vagrant/logs/ipspecs-www-access.log common
+    RewriteEngine On
+</VirtualHost>
+EOL
+echo "127.0.0.1 ipspecs api.ipspecs www.ipspecs acp.ipspecs" >> /etc/hosts
+SHELL
+#=end
+
+#=begin
+  # vhost ACP.RG
+  config.vm.provision "shell", inline: <<-SHELL
+cat >> /etc/httpd/conf.d/acprg.conf <<EOL
+<VirtualHost *:80>
+    DocumentRoot /vagrant/fdt/code/docroot_acp
+    ServerName acp.rg
+    ErrorLog    /vagrant/logs/acp.rg-error.log
+    CustomLog   /vagrant/logs/acp.rg-access.log common
+    RewriteEngine On
+</VirtualHost>
+EOL
+echo "127.0.0.1 acp.rg" >> /etc/hosts
+SHELL
+#=end
+
+#=begin
+  # vhost VME
+  config.vm.provision "shell", inline: <<-SHELL
+cat >> /etc/httpd/conf.d/vme.conf <<EOL
+<VirtualHost *:80>
+    DocumentRoot /vagrant/vme/code/docroot_acp
+    ServerName acp.vme
+    ErrorLog    /vagrant/logs/vme-error.log
+    CustomLog   /vagrant/logs/vme-access.log common
+    RewriteEngine On
+</VirtualHost>
+<VirtualHost *:80>
+    DocumentRoot /vagrant/vme/code/docroot_api
+    ServerName api.vme
+    ErrorLog    /vagrant/logs/vme-error.log
+    CustomLog   /vagrant/logs/vme-access.log common
+    RewriteEngine On
+</VirtualHost>
+<VirtualHost *:80>
+    DocumentRoot /vagrant/vme/code/docroot_website
+    ServerName vme
+    ErrorLog    /vagrant/logs/vme-error.log
+    CustomLog   /vagrant/logs/vme-access.log common
+    RewriteEngine On
+</VirtualHost>
+EOL
+echo "127.0.0.1 vme acp.vme api.vme" >> /etc/hosts
+SHELL
+#=end
+
+#=begin
+  # vhost VME
+  config.vm.provision "shell", inline: <<-SHELL
+apachectl retstart
+systemctl restart memcached.service
+SHELL
+#=end
+
+#=begin
+  # vhost VME
+  config.vm.provision "shell", inline: <<-SHELL
+cat >> /etc/motd <<EOL
+
+
+Welcome to VM-FDT! Please contact Max Deshkevich having any troubles/questions/feedback: 7workers@gmail.com
+------------------------------------------
+hosts :
+192.168.56.118 acp.rg dmt.loc fdt ipspecs rg botmon api.botmon acp.botmon api.ipspecs acp.ipspecs www.ipspecs vme acp.vme api.vme vm-fdt
+
+http://vm-fdt/rockmongo/            http://vm-fdt/phpmyadmin/             http://vm-fdt:1080/ (mailcatcher)
+
+switch to root:  $ sudo su -
+
+restart apache: $ sudo apachectl restart
+flush memcache: $ echo 'flush_all' | nc localhost 11211
+
+EOL
+SHELL
+#=end
 
 end
 
