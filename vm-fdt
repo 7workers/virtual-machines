@@ -1,0 +1,207 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# 
+# modify config:
+#
+# sed -c -i "s/\($TARGET_KEY *= *\).*/\1$REPLACEMENT_VALUE/" $CONFIG_FILE
+#
+#
+
+
+
+vagrant_root = File.dirname(__FILE__)
+disk = "#{vagrant_root}/vm-fdt-db.vdi"
+
+Vagrant.configure(2) do |config|
+
+#config.vm.box = "ansiwen/fedora-23"
+  config.vm.box = "boxcutter/fedora23"
+  config.vm.hostname = "vm-fdt"
+  config.vm.box_check_update = false
+
+  config.vm.network "private_network", ip: "192.168.56.118"
+ 
+  config.vm.synced_folder vagrant_root, "/vagrant/", disabled: true
+  config.vm.synced_folder "#{vagrant_root}/fdt", "/vagrant/fdt", create: true
+  config.vm.synced_folder "#{vagrant_root}/ipspecs", "/vagrant/ipspecs", create: true
+  
+  
+
+  config.vm.provider "virtualbox" do |vb|
+
+        vb.memory = "2048"
+        vb.cpus = 2
+        vb.name = "vm-fdt"
+        
+        unless File.exists?(disk)
+            vb.customize ['createhd', '--filename', disk, '--variant', 'Standard', '--size', 60*1024]
+        end
+        
+        vb.customize ['storageattach', :id,  '--storagectl', 'IDE Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', disk]
+    
+  end
+  
+  config.vm.provision "shell", inline: <<-SHELL
+timedatectl set-timezone Europe/Minsk
+cat > /etc/rc.d/rc.local <<EOL
+#!/bin/bash
+
+EOL
+chmod a+x /etc/rc.d/rc.local
+#
+#
+# install packages
+#
+#
+dnf install -y ruby ruby-devel redhat-rpm-config gcc-c++ rubygems community-mysql-server rabbitmq-server autoconf libmemcached-devel openssl-devel libmcrypt-devel aspell-devel readline-devel tidy-devel gcc parted nano mc httpd httpd-devel libxml2 libxml2-devel bzip2-devel libcurl-devel libjpeg-turbo libjpeg-turbo-devel libpng-devel freetype-devel 
+#
+#
+# attach secondary storage
+#
+#
+parted /dev/sdb mklabel msdos
+parted /dev/sdb mkpart primary 512 100%
+mkfs.xfs /dev/sdb1
+mkdir /mnt/disk
+echo `blkid /dev/sdb1 | awk '{print$2}' | sed -e 's/"//g'` /mnt/disk xfs noatime,nobarrier 0 0 >> /etc/fstab
+mount /mnt/disk
+#
+#
+# compile PHP
+#
+#
+cd /usr/src/
+wget -nv https://php.net/get/php-5.6.7.tar.bz2/from/this/mirror -O php-5.6.7.tar.bz2
+tar -xjf php-5.6.7.tar.bz2
+cd php-5.6.7
+make clean
+./configure --with-mysql=mysqlnd --with-mysqli=mysqlnd --with-pdo-mysql=mysqlnd --with-libdir=lib64 --enable-ftp --enable-mbstring --enable-exif --with-openssl --with-pspell --with-jpeg-dir=/usr --with-png-dir=/usr --with-freetype-dir=/usr --with-gd --enable-gd-native-ttf --enable-inline-optimization --with-curl --with-kerberos --with-gettext --with-readline --with-zlib --with-zlib-dir=/usr --with-bz2 --with-mcrypt --with-ldap --with-ldap-sasl --with-tidy --enable-zip --enable-pcntl --enable-soap --enable-calendar --enable-sockets --with-apxs2=/usr/bin/apxs
+make
+make install
+\cp /usr/src/php-5.6.7/php.ini-development /usr/local/lib/php.ini
+
+#
+#
+# install PHP modules
+#
+#
+pecl config-set php_ini /usr/local/lib/php.ini
+pecl install memcached
+pecl install mongo-1.6.9
+pecl install xdebug
+
+
+cat >> /usr/local/lib/php.ini <<EOL
+
+extension=memcached.so
+extension=mongo.so
+extension=xdebug.so
+
+[xdebug]
+xdebug.remote_enable=1
+xdebug.remote_host="192.168.56.1"
+xdebug.remote_port=9000
+xdebug.remote_idkey=XDEBUGIDKEY
+xdebug.profiler_enable=Off
+xdebug.profiler_trigger=On
+xdebug.profiler_output_dir="/vagrant/xdebug"
+[Date]
+date.timezone = Europe/Minsk
+
+EOL
+
+#
+# PhpMyAdmin
+#
+
+cd /usr/src/
+wget -nv https://files.phpmyadmin.net/phpMyAdmin/4.5.3.1/phpMyAdmin-4.5.3.1-english.tar.bz2
+tar -xjf phpMyAdmin-4.5.3.1-english.tar.bz2
+cp -R phpMyAdmin-4.5.3.1-english /var/www/phpmyadmin
+
+cd /var/www/phpmyadmin/
+cp config.sample.inc.php config.inc.php
+
+
+cat  > /etc/httpd/conf.d/phpmyadmin.conf  <<EOL
+Alias /phpMyAdmin /var/www/phpmyadmin
+Alias /phpmyadmin /var/www/phpmyadmin
+EOL
+
+
+#
+# setup Apache
+#
+
+cat  > /etc/httpd/conf.d/php.conf  <<EOL
+LoadModule php5_module modules/libphp5.so
+AddHandler php5-script .php
+AddType text/html .php
+DirectoryIndex index.php
+EOL
+
+systemctl enable httpd.service
+
+#
+# setup MongoDb
+#
+
+cd /usr/src/
+wget -nv http://downloads.mongodb.org/linux/mongodb-linux-x86_64-amazon-3.0.6.tgz -O mongodb-linux-x86_64-amazon-3.0.6.tgz
+tar -xzf mongodb-linux-x86_64-amazon-3.0.6.tgz
+cp -R mongodb-linux-x86_64-amazon-3.0.6/ /usr/local/mongodb
+
+cat >> /etc/rc.d/rc.local <<EOL
+/usr/local/mongodb/bin/mongod -f /etc/mongodb/standalone.conf
+EOL
+
+mkdir /etc/mongodb
+cat > /etc/mongodb/standalone.conf <<EOL
+dbpath = /mnt/disk/mongodb
+storageEngine = wiredTiger
+logpath = /mnt/disk/mongodb/mongo.log
+fork = true
+EOL
+
+mkdir /mnt/disk/mongodb
+
+/usr/local/mongodb/bin/mongod -f /etc/mongodb/standalone.conf
+
+#
+# setup MySQL
+#
+
+sed -c -i "s/\(datadir *= *\).*/\1\/mnt\/disk\/mysqldata/" /etc/my.cnf.d/community-mysql-server.cnf
+sed -c -i "s/\(log\-error *= *\).*/\1\/mnt\/disk\/mysqld\.log/" /etc/my.cnf.d/community-mysql-server.cnf
+systemctl enable mysqld.service
+systemctl restart mysqld.service
+
+#
+# setup mailcatcher
+#
+
+gem install mailcatcher
+
+cat >> /etc/rc.d/rc.local <<EOL
+/usr/local/bin/mailcatcher --http-ip 192.168.56.118
+EOL
+
+cat >> /usr/local/lib/php.ini <<EOL
+sendmail_path = /usr/bin/env catchmail -f some@from.address
+EOL
+
+/usr/local/bin/mailcatcher --http-ip 192.168.56.118
+
+#
+#
+#
+
+apachectl restart
+
+SHELL
+
+end
+
+
+
