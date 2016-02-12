@@ -53,9 +53,8 @@ Vagrant.configure(2) do |config|
   end
 #=begin
   config.vm.provision "shell", inline: <<-SHELL
-ln -s /mnt/disk/ /home/storage.secondary
-mkdir -p /home/storage.secondary/fdt
-chown vagrant.vagrant /home/storage.secondary/fdt
+mkdir -p /mnt/vagrant_data
+chown vagrant.vagrant /mnt/vagrant_data
 echo "cd /vagrant/" >> /home/vagrant/.bash_profile
 SHELL
 #=end
@@ -63,6 +62,7 @@ SHELL
 #=begin
   # general system config and setup
   config.vm.provision "shell", inline: <<-SHELL
+echo "127.0.0.1 localhost" >> /etc/hosts
 timedatectl set-timezone Europe/Minsk
 cat > /etc/rc.d/rc.local <<EOL
 #!/bin/bash
@@ -89,7 +89,7 @@ SHELL
 #=begin
   # install packages
   config.vm.provision "shell", inline: <<-SHELL
-dnf install -y nc librabbitmq-devel librabbitmq memcached htop words ruby git ruby-devel redhat-rpm-config gcc-c++ rubygems community-mysql-server rabbitmq-server autoconf libmemcached-devel openssl-devel libmcrypt-devel aspell-devel readline-devel tidy-devel gcc parted nano mc httpd httpd-devel libxml2 libxml2-devel bzip2-devel libcurl-devel libjpeg-turbo libjpeg-turbo-devel libpng-devel freetype-devel 
+dnf install -y telnet tor torsocks nc librabbitmq-devel librabbitmq memcached htop words ruby git ruby-devel redhat-rpm-config gcc-c++ rubygems community-mysql-server rabbitmq-server autoconf libmemcached-devel openssl-devel libmcrypt-devel aspell-devel readline-devel tidy-devel gcc parted nano mc httpd httpd-devel libxml2 libxml2-devel bzip2-devel libcurl-devel libjpeg-turbo libjpeg-turbo-devel libpng-devel freetype-devel 
 SHELL
 #=end
 
@@ -97,6 +97,7 @@ SHELL
   # enable services
   config.vm.provision "shell", inline: <<-SHELL
 systemctl enable memcached.service
+systemctl enable tor.service
 SHELL
 #=end
 
@@ -534,15 +535,27 @@ hosts :
 
 http://vm-fdt/rockmongo/            http://vm-fdt/phpmyadmin/             http://vm-fdt:1080/ (mailcatcher)
 
-tail -n 50 /vagrant/logs/php_error.log
-
+$ tail -n 50 /vagrant/logs/php_error.log
 $ sudo su -
 $ sudo apachectl restart
 $ echo 'flush_all' | nc localhost 11211
+$ xdebug-start
+$ xdebug-stop
 
 EOL
 SHELL
 #=end
+
+#=begin
+  # xdebug aliases
+  config.vm.provision "shell", inline: <<-SHELL
+cat >> /home/vagrant/.bash_profile <<EOL
+alias xdebug-start='export XDEBUG_CONFIG="idekey=PHPSTORM"; export PHP_IDE_CONFIG="serverName=vm-fdt"'
+alias xdebug-stop='unset XDEBUG_CONFIG; unset PHP_IDE_CONFIG'
+EOL
+SHELL
+#=end
+
 
   config.vm.provision "shell", inline: <<-SHELL
 echo ""
