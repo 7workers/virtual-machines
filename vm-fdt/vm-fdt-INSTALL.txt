@@ -5,7 +5,7 @@ Install PhpStorm: https://www.jetbrains.com/phpstorm/download/
 Install KeePass: https://www.keepassx.org/downloads/ (keep passsword and SSH keys there)
 Install MongoDB: https://www.mongodb.org/downloads#production (win-64 legacy, only install client and tools, do not install server)
     Copy files from C:\Program Files\MongoDB\Server\VERSION\bin\
-    To: C:\Program Files\Git\mingw65\bin
+    To: C:\Program Files\Git\mingw64\bin
     
 DO NOT INSTALL PUTTY!
 
