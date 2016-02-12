@@ -1,0 +1,113 @@
+Install VirtualBox: https://www.virtualbox.org/wiki/Downloads
+Install Vagrant: https://www.vagrantup.com/downloads.html
+Install Git: https://git-scm.com/downloads
+Install PhpStorm: https://www.jetbrains.com/phpstorm/download/
+Install KeePass: https://www.keepassx.org/downloads/ (keep passsword and SSH keys there)
+Install MongoDB: https://www.mongodb.org/downloads#production (win-64 legacy, only install client and tools, do not install server)
+    Copy files from C:\Program Files\MongoDB\Server\VERSION\bin\
+    To: C:\Program Files\Git\mingw65\bin
+    
+DO NOT INSTALL PUTTY!
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+Make sure Git-bash works, launch it and test a bit:
+
+$ help
+$ cd C:
+$ ssh-keygen
+$ cd ~
+$ pwd
+$ cd .ssh
+$ ls
+$ vagrant
+$ cat /proc/cpuinfo
+$ exit
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+Make sure your SSH keys are in place:
+
+$ cp /PATH/TO/YOUR_PRIVATE_KEY ~/.ssh/id_rsa
+$ cp /PATH/TO/YOUR_PUBLIC_KEY ~/.ssh/id_rsa.pub
+
+Test SSH:
+
+$ ssh USER@SERVER_HOSTNAME -p SSH_PORT
+
+You should be able to login in to server without password prompt
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+Create dirs:
+
+$ cd /c/
+$ mkdir -p _projects/vm-fdt
+$ cd _projects/vm-fdt
+$ mkdir -p fdt ipspecs vme
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+Checkout projects from GIT:
+
+$ cd /c/_projects/vm-fdt/
+
+$ git clone ssh://USER@SERVER_HOSTNAME:SSH_PORT/home/fdt.max/git_repos/fdt.git fdt/code
+$ git clone ssh://USER@SERVER_HOSTNAME:SSH_PORT/home/fdt.max/git_repos/bbt.git fdt/_bbt
+
+$ git clone ssh://USER@SERVER_HOSTNAME:SSH_PORT/home/fdt.max/git_repos/ipspecs.git ipspecs/code
+$ git clone ssh://USER@SERVER_HOSTNAME:SSH_PORT/home/fdt.max/git_repos/bbt.git ipspecs/_bbt
+
+$ git clone ssh://USER@SERVER_HOSTNAME:SSH_PORT/home/fdt.max/git_repos/vme.git vme/code
+$ git clone ssh://USER@SERVER_HOSTNAME:SSH_PORT/home/fdt.max/git_repos/bbt.git vme/_bbt
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+Download Vagrantfile:
+
+$ cd /c/_projects/vm-fdt/
+$ curl -O https://raw.githubusercontent.com/7workers/virtual-machines/master/vm-fdt/Vagrantfile
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+Setup VM:
+
+$ cd /c/_projects/vm-fdt/
+$ vagrant up
+
+ATTENTION: this may take up to 1 hour depend on internet connection speed. 1-2Gb traffic.
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+Edit hosts file (admin premissions may be required): /c/Windows/System32/drivers/etc/hosts
+
+add line:
+
+192.168.56.118 acp.rg dmt.loc fdt ipspecs rg botmon api.botmon acp.botmon api.ipspecs acp.ipspecs www.ipspecs vme acp.vme api.vme vm-fdt
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+Install/setup individual projects:
+
+$ cd /c/_projects/vm-fdt/
+$ vagrant ssh
+
+vm-fdt$ cd /vagrant/fdt/code/dev/
+vm-fdt$ cat INSTALL
+
+vm-fdt$ cd /vagrant/ipspecs/code/dev/
+vm-fdt$ cat INSTALL
+
+vm-fdt$ cd /vagrant/vme/code/dev/
+vm-fdt$ cat INSTALL
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+Setup PhpStorm:
+
+Tools > Terminal > Shell path = C:\Program Files\Git\bin\bash.exe
+Version Control > Git > Path to Git executable = C:\Program files\Git\bin\git.exe
+Version Control > Git > SSH executable = Native
+Version Control > Git > Control repositories synchronously = YES
+
+------------------------------------------------------------------------------------------------------------------------------------------
