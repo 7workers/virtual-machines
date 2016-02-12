@@ -33,7 +33,7 @@ Vagrant.configure(2) do |config|
   config.vm.synced_folder "#{vagrant_root}/fdt", "/vagrant/fdt", create: true
   config.vm.synced_folder "#{vagrant_root}/ipspecs", "/vagrant/ipspecs", create: true
   config.vm.synced_folder "#{vagrant_root}/vme", "/vagrant/vme", create: true
-  config.vm.synced_folder "#{vagrant_root}/rguard", "/vagrant/rguard", create: true
+  config.vm.synced_folder "#{vagrant_root}/shared", "/vagrant/shared", create: true
   config.vm.synced_folder "#{vagrant_root}/rockmongo", "/vagrant/rockmongo", create: true
 
 #  config.hostsupdater.aliases = ["fdt", "ipspecs", "acp.rg", "api.ipspecs", "acp.ipspecs", "rg", "vme", "api.vme", "acp.vme"]
@@ -71,6 +71,8 @@ EOL
 chmod a+x /etc/rc.d/rc.local
 mkdir -p /vagrant/logs
 chmod a+rw /vagrant/logs/
+mkdir -p /vagrant/shared/php_include/
+
 SHELL
 #=end
 
@@ -188,6 +190,7 @@ make clean
 ./configure --with-mysql=mysqlnd --with-mysqli=mysqlnd --with-pdo-mysql=mysqlnd --with-libdir=lib64 --enable-ftp --enable-mbstring --enable-exif --with-openssl --with-pspell --with-jpeg-dir=/usr --with-png-dir=/usr --with-freetype-dir=/usr --with-gd --enable-gd-native-ttf --enable-inline-optimization --with-curl --with-kerberos --with-gettext --with-readline --with-zlib --with-zlib-dir=/usr --with-bz2 --with-mcrypt --with-ldap --with-ldap-sasl --with-tidy --enable-zip --enable-pcntl --enable-soap --enable-calendar --enable-sockets --with-apxs2=/usr/bin/apxs
 make
 make install
+ln -s /usr/local/bin/php /usr/bin/php
 \\cp /usr/src/php-5.6.7/php.ini-development /usr/local/lib/php.ini
 sed -c -i "s/\\(short_open_tag *= *\\).*/\\1On/" /usr/local/lib/php.ini
 sed -c -i "s/\\(memory_limit *= *\\).*/\\1512M/" /usr/local/lib/php.ini
@@ -242,7 +245,16 @@ apachectl restart
 cd /usr/src/
 wget -nv https://phar.phpunit.de/phpunit.phar
 chmod +x phpunit.phar
+cp phpunit.phar /vagrant/shared/php_include/phpunit.phar
 mv phpunit.phar /usr/local/bin/phpunit
+
+cd /usr/src/
+php -r "readfile('https://getcomposer.org/installer');" > composer-setup.php
+php -r "if (hash('SHA384', file_get_contents('composer-setup.php')) === '781c98992e23d4a5ce559daf0170f8a9b3b91331ddc4a3fa9f7d42b6d981513cdc1411730112495fbf9d59cffbf20fb2') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); }"
+php composer-setup.php
+php -r "unlink('composer-setup.php');"
+cp composer.phar /vagrant/shared/php_include/composer.phar
+mv composer.phar /usr/local/bin/composer
 
 SHELL
 #=end
