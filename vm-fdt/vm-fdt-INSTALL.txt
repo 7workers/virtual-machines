@@ -93,13 +93,13 @@ $ cd /c/_projects/vm-fdt/
 $ vagrant ssh
 
 vm-fdt$ cd /vagrant/fdt/code/dev/
-vm-fdt$ cat INSTALL
+vm-fdt$ cat install-fdt.txt
 
 vm-fdt$ cd /vagrant/ipspecs/code/dev/
-vm-fdt$ cat INSTALL
+vm-fdt$ cat install-ipspecs.txt
 
 vm-fdt$ cd /vagrant/vme/code/dev/
-vm-fdt$ cat INSTALL
+vm-fdt$ cat install-vme.txt
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
