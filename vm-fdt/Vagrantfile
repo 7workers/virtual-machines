@@ -72,7 +72,10 @@ chmod a+x /etc/rc.d/rc.local
 mkdir -p /vagrant/logs
 chmod a+rw /vagrant/logs/
 mkdir -p /vagrant/shared/php_include/
-
+sed -c -i "s/\\(GRUB_TIMEOUT *= *\\).*/\\11/" /etc/default/grub
+sed -c -i "s/rhgb//" /etc/default/grub
+sed -c -i "s/quiet//" /etc/default/grub
+grub2-mkconfig -o /etc/grub2.cfg
 SHELL
 #=end
 
@@ -575,7 +578,7 @@ SHELL
 
   config.vm.provision "shell", inline: <<-SHELL
 echo ""
-echo "Please clone all necessary projects (vagrant halt, clone ABC, vagrant up):"
+echo "All done, now setup individual projects:"
 echo ""
 SHELL
 
