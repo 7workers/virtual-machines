@@ -97,7 +97,11 @@ SHELL
   # enable services
   config.vm.provision "shell", inline: <<-SHELL
 systemctl enable memcached.service
+systemctl start memcached.service
 systemctl enable tor.service
+systemctl start tor.service
+systemctl enable rabbitmq-server.service
+systemctl start rabbitmq-server.service
 SHELL
 #=end
 
