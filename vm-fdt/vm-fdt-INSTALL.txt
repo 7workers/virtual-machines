@@ -63,10 +63,12 @@ $ git clone ssh://USER@SERVER_HOSTNAME:SSH_PORT/home/fdt.max/git_repos/bbt.git v
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
-Download Vagrantfile:
+Download Vagrantfile and this file:
 
 $ cd /c/_projects/vm-fdt/
+$ curl -O https://raw.githubusercontent.com/7workers/virtual-machines/master/vm-fdt/vm-fdt-INSTALL.txt
 $ curl -O https://raw.githubusercontent.com/7workers/virtual-machines/master/vm-fdt/Vagrantfile
+
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -93,13 +95,13 @@ $ cd /c/_projects/vm-fdt/
 $ vagrant ssh
 
 vm-fdt$ cd /vagrant/fdt/code/dev/
-vm-fdt$ cat install-fdt.txt
+vm-fdt$ cat INSTALL
 
 vm-fdt$ cd /vagrant/ipspecs/code/dev/
-vm-fdt$ cat install-ipspecs.txt
+vm-fdt$ cat INSTALL
 
 vm-fdt$ cd /vagrant/vme/code/dev/
-vm-fdt$ cat install-vme.txt
+vm-fdt$ cat INSTALL
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
