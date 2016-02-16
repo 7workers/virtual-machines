@@ -114,8 +114,5 @@ Version Control > Git > SSH executable = Native
 Version Control > Git > Control repositories synchronously = YES
 Languages & Frameworks > PHP > Include path > + > select /c/_projects/shared/php_include
 
-Add Include path:
-
-
 
 ------------------------------------------------------------------------------------------------------------------------------------------
