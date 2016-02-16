@@ -94,7 +94,7 @@ SHELL
 #=begin
   # install packages
   config.vm.provision "shell", inline: <<-SHELL
-dnf install -y telnet tor torsocks nc librabbitmq-devel librabbitmq memcached htop words ruby git ruby-devel redhat-rpm-config gcc-c++ rubygems community-mysql-server rabbitmq-server autoconf libmemcached-devel openssl-devel libmcrypt-devel aspell-devel readline-devel tidy-devel gcc parted nano mc httpd httpd-devel libxml2 libxml2-devel bzip2-devel libcurl-devel libjpeg-turbo libjpeg-turbo-devel libpng-devel freetype-devel 
+dnf install -y psmisc telnet tor torsocks nc librabbitmq-devel librabbitmq memcached htop words ruby git ruby-devel redhat-rpm-config gcc-c++ rubygems community-mysql-server rabbitmq-server autoconf libmemcached-devel openssl-devel libmcrypt-devel aspell-devel readline-devel tidy-devel gcc parted nano mc httpd httpd-devel libxml2 libxml2-devel bzip2-devel libcurl-devel libjpeg-turbo libjpeg-turbo-devel libpng-devel freetype-devel 
 SHELL
 #=end
 
@@ -107,6 +107,7 @@ systemctl enable tor.service
 systemctl start tor.service
 systemctl enable rabbitmq-server.service
 systemctl start rabbitmq-server.service
+sed -i '/NotifyAccess/d' /lib/systemd/system/rabbitmq-server.service
 SHELL
 #=end
 
