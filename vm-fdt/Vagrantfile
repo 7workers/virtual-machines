@@ -94,7 +94,12 @@ SHELL
 #=begin
   # install packages
   config.vm.provision "shell", inline: <<-SHELL
-dnf install -y psmisc telnet tor torsocks nc librabbitmq-devel librabbitmq memcached htop words ruby git ruby-devel redhat-rpm-config gcc-c++ rubygems community-mysql-server rabbitmq-server autoconf libmemcached-devel openssl-devel libmcrypt-devel aspell-devel readline-devel tidy-devel gcc parted nano mc httpd httpd-devel libxml2 libxml2-devel bzip2-devel libcurl-devel libjpeg-turbo libjpeg-turbo-devel libpng-devel freetype-devel 
+dnf install -y tor torsocks  words ruby git ruby-devel redhat-rpm-config gcc-c++ rubygems autoconf libmemcached-devel openssl-devel libmcrypt-devel aspell-devel readline-devel tidy-devel gcc parted nano mc httpd httpd-devel libxml2 libxml2-devel bzip2-devel libcurl-devel libjpeg-turbo libjpeg-turbo-devel libpng-devel freetype-devel 
+dnf install -y community-mysql-server
+dnf install -y memcached
+dnf install -y librabbitmq-devel librabbitmq rabbitmq-server
+dnf install -y ImageMagick
+dnf install -y psmisc telnet nc htop
 SHELL
 #=end
 
@@ -538,8 +543,6 @@ SHELL
   # vhost VME
   config.vm.provision "shell", inline: <<-SHELL
 apachectl restart
-systemctl restart memcached.service
-systemctl restart rabbitmq-server.service
 SHELL
 #=end
 
