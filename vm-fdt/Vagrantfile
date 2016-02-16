@@ -94,12 +94,16 @@ SHELL
 #=begin
   # install packages
   config.vm.provision "shell", inline: <<-SHELL
-dnf install -y tor torsocks  words ruby git ruby-devel redhat-rpm-config gcc-c++ rubygems autoconf libmemcached-devel openssl-devel libmcrypt-devel aspell-devel readline-devel tidy-devel gcc parted nano mc httpd httpd-devel libxml2 libxml2-devel bzip2-devel libcurl-devel libjpeg-turbo libjpeg-turbo-devel libpng-devel freetype-devel 
+dnf install -y ruby ruby-devel rubygems
 dnf install -y community-mysql-server
-dnf install -y memcached
+dnf install -y httpd httpd-devel
+dnf install -y memcached libmemcached-devel
 dnf install -y librabbitmq-devel librabbitmq rabbitmq-server
 dnf install -y ImageMagick
-dnf install -y psmisc telnet nc htop
+dnf install -y tor torsocks
+dnf install -y words
+dnf install -y psmisc telnet nc htop nano mc parted git
+dnf install -y redhat-rpm-config gcc-c++ autoconf openssl-devel libmcrypt-devel aspell-devel readline-devel tidy-devel gcc libxml2 libxml2-devel bzip2-devel libcurl-devel libjpeg-turbo libjpeg-turbo-devel libpng-devel freetype-devel 
 SHELL
 #=end
 
