@@ -1,6 +1,9 @@
 Install VirtualBox: https://www.virtualbox.org/wiki/Downloads
 Install Vagrant: https://www.vagrantup.com/downloads.html
 Install Git: https://git-scm.com/downloads
+
+When git ask "line endings", choose "checkout as-is, commit as-is"
+
 Install PhpStorm: https://www.jetbrains.com/phpstorm/download/
 Install KeePass: https://www.keepassx.org/downloads/ (keep passsword and SSH keys there)
 Install MongoDB: https://www.mongodb.org/downloads#production (win-64 legacy, only install client and tools, do not install server)
@@ -16,7 +19,7 @@ Make sure Git-bash works, launch it and test a bit:
 
 $ help
 $ cd C:
-$ ssh-keygen
+$ ssh-keygen  (here just hit enter key everywhere, do not type anything)
 $ cd ~
 $ pwd
 $ cd .ssh
@@ -32,6 +35,15 @@ Make sure your SSH keys are in place:
 $ cp /PATH/TO/YOUR_PRIVATE_KEY ~/.ssh/id_rsa
 $ cp /PATH/TO/YOUR_PUBLIC_KEY ~/.ssh/id_rsa.pub
 
+NOTE: if you use DSA keys, file names should be id_dsa and id_dsa.pub
+
+you may need to create file ~/.ssh/config
+and add line: 
+
+PubkeyAcceptedKeyTypes ssh-dss
+
+
+
 Test SSH:
 
 $ ssh USER@SERVER_HOSTNAME -p SSH_PORT
@@ -40,7 +52,7 @@ You should be able to login in to server without password prompt
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
-Create dirs:
+Create project dirs:
 
 $ cd /c/
 $ mkdir -p _projects/vm-fdt
