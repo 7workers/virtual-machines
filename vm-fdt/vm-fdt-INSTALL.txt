@@ -95,13 +95,13 @@ $ cd /c/_projects/vm-fdt/
 $ vagrant ssh
 
 vm-fdt$ cd /vagrant/fdt/code/dev/
-vm-fdt$ cat INSTALL
+vm-fdt$ cat install-fdt.txt
 
 vm-fdt$ cd /vagrant/ipspecs/code/dev/
-vm-fdt$ cat INSTALL
+vm-fdt$ cat install-ipspecs.txt
 
 vm-fdt$ cd /vagrant/vme/code/dev/
-vm-fdt$ cat INSTALL
+vm-fdt$ cat install-vme.txt
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -111,5 +111,10 @@ Tools > Terminal > Shell path = C:\Program Files\Git\bin\bash.exe
 Version Control > Git > Path to Git executable = C:\Program files\Git\bin\git.exe
 Version Control > Git > SSH executable = Native
 Version Control > Git > Control repositories synchronously = YES
+Languages & Frameworks > PHP > Include path > + > select /c/_projects/shared/php_include
+
+Add Include path:
+
+
 
 ------------------------------------------------------------------------------------------------------------------------------------------
