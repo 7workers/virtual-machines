@@ -115,10 +115,20 @@ systemctl start memcached.service
 systemctl enable tor.service
 systemctl start tor.service
 systemctl enable rabbitmq-server.service
-systemctl start rabbitmq-server.service
-sed -i '/NotifyAccess/d' /lib/systemd/system/rabbitmq-server.service
 SHELL
 #=end
+
+#=begin
+  # install packages
+  config.vm.provision "shell", inline: <<-SHELL
+dnf remove -y rabbitmq-server
+dnf install -y rabbitmq-server
+systemctl enable rabbitmq-server.service
+SHELL
+#=end
+
+#sed -i '/NotifyAccess/d' /lib/systemd/system/rabbitmq-server.service
+#systemctl start rabbitmq-server.service
 
 #=begin
   # apache config
@@ -586,7 +596,7 @@ SHELL
 
   config.vm.provision "shell", inline: <<-SHELL
 echo ""
-echo "All done, now setup individual projects:"
+echo "All done, now setup individual projects. Please restart VM first: vagrant halt; vagrant up"
 echo ""
 SHELL
 
