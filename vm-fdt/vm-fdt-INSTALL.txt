@@ -121,10 +121,24 @@ vm-fdt$ cat install-vme.txt
 Setup PhpStorm:
 
 Tools > Terminal > Shell path = C:\Program Files\Git\bin\bash.exe
+
 Version Control > Git > Path to Git executable = C:\Program files\Git\bin\git.exe
+
 Version Control > Git > SSH executable = Native
+
 Version Control > Git > Control repositories synchronously = YES
+
 Languages & Frameworks > PHP > Include path > + > select /c/_projects/shared/php_include
+
+Languages & Frameworks > PHP > Interpreter ... + name "PHP@vm-fdt" - Vagrant, set instance folder /c/_projects/vm-fdt; PHP executable: /usr/bin/php
+
+Languages & Frameworks > PHP > PHPUnit + Interpeter PHP@vm-fdt; path to phpunit.phar: /vagrant/shared/php_include/phpunit.phar
+    Config file: /vagrant/PROJECTS/code/test/phpunit.xml
+    Bootstrap file: /vagrant/PROJECTS/code/test/bootstrap.php
+    
+Languages & Frameworks > PHP > Servers + name=vm-fdt (shared); host=vm-fdt; path mappings /c/_projects/vm-fdt/PROJECT/code -> /vagrant/PROJECTS/code
+
+Tools > Vagrant : Vagrant executable: vagrant; Instance folder: /c/_projects/vm-fdt
 
 
 ------------------------------------------------------------------------------------------------------------------------------------------
