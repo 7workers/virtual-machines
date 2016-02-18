@@ -40,7 +40,7 @@ NOTE: if you use DSA keys, file names should be id_dsa and id_dsa.pub
 you may need to create file ~/.ssh/config
 and add line: 
 
-PubkeyAcceptedKeyTypes ssh-dss
+PubkeyAcceptedKeyTypes ssh-dss,ssh-rsa
 
 
 
