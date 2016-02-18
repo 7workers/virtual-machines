@@ -98,7 +98,7 @@ Edit hosts file (admin premissions may be required): /c/Windows/System32/drivers
 
 add line:
 
-192.168.56.118 acp.rg dmt.loc fdt ipspecs rg botmon api.botmon acp.botmon api.ipspecs acp.ipspecs www.ipspecs vme acp.vme api.vme vm-fdt
+192.168.56.118 www.rg acp.rg dmt.loc fdt ipspecs rg botmon api.botmon acp.botmon api.ipspecs acp.ipspecs www.ipspecs vme acp.vme api.vme vm-fdt
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
