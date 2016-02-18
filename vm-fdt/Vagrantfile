@@ -443,12 +443,19 @@ cat > /etc/httpd/conf.d/vm-fdt.conf <<EOL
 EOL
 echo "127.0.0.1 vm-fdt" >> /etc/hosts
 cat >> /var/www/html/index.html <<EOL
-<h1>Welcome to VM-FDT!</h1>
+<h1>Welcome to VM-FDT!</h1><table width="100%"><tr><td>
 <a href="http://vm-fdt/phpmyadmin/">PhpMyAdmin</a><br/>
 <a href="http://vm-fdt/rockmongo/">RockMongo</a><br/>
-<a href="http://vm-fdt:1080/">MailCatched</a><br/>
-<hr/>
-Max Deshkevich <7workers@gmail.com>
+<a href="http://vm-fdt:1080/">MailCatcher</a><br/>
+</td><td>
+<a href="http://fdt/">FDT</a><br/>
+<a href="http://acp.rg/">ACP.RG</a><br/>
+<a href="http://www.rg/">www.RG</a><br/>
+<a href="http://ipspecs/">acp.IpSpecs</a><br/>
+<a href="http://www.ipspecs/">www.IpSpecs</a><br/>
+<a href="http://acp.vme/">acp.VME</a><br/>
+<a href="http://vme/">VME</a><br/>
+</td></tr></table><hr/>Max Deshkevich <7workers@gmail.com>
 EOL
 
 SHELL
@@ -519,6 +526,22 @@ SHELL
 #=end
 
 #=begin
+  # vhost WWW.RG
+  config.vm.provision "shell", inline: <<-SHELL
+cat >> /etc/httpd/conf.d/wwwrg.conf <<EOL
+<VirtualHost *:80>
+    DocumentRoot /vagrant/fdt/code/docroot_www
+    ServerName www.rg
+    ErrorLog    /vagrant/logs/www.rg-error.log
+    CustomLog   /vagrant/logs/www.rg-access.log common
+    RewriteEngine On
+</VirtualHost>
+EOL
+echo "127.0.0.1 www.rg" >> /etc/hosts
+SHELL
+#=end
+
+#=begin
   # vhost VME
   config.vm.provision "shell", inline: <<-SHELL
 cat >> /etc/httpd/conf.d/vme.conf <<EOL
@@ -556,7 +579,7 @@ cat >> /etc/motd <<EOL
 Welcome to VM-FDT! Please contact Max Deshkevich having any questions: 7workers@gmail.com
 ------------------------------------------
 hosts :
-192.168.56.118 acp.rg dmt.loc fdt ipspecs rg botmon api.botmon acp.botmon api.ipspecs acp.ipspecs www.ipspecs vme acp.vme api.vme vm-fdt
+192.168.56.118 www.rg acp.rg dmt.loc fdt ipspecs rg botmon api.botmon acp.botmon api.ipspecs acp.ipspecs www.ipspecs vme acp.vme api.vme vm-fdt
 
 http://vm-fdt/rockmongo/            http://vm-fdt/phpmyadmin/             http://vm-fdt:1080/ (mailcatcher)
 
