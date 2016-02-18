@@ -263,7 +263,6 @@ xdebug.profiler_output_dir="/vagrant/xdebug"
 date.timezone = Europe/Minsk
 
 EOL
-apachectl restart
 
 cd /usr/src/
 wget -nv https://phar.phpunit.de/phpunit.phar
@@ -322,7 +321,7 @@ cat  > /etc/httpd/conf.d/phpmyadmin.conf <<EOL
 Alias /phpMyAdmin /var/www/phpmyadmin
 Alias /phpmyadmin /var/www/phpmyadmin
 EOL
-apachectl restart
+
 SHELL
 #=end
 
@@ -335,6 +334,7 @@ tar -xzf mongodb-linux-x86_64-amazon-3.0.6.tgz
 cp -R mongodb-linux-x86_64-amazon-3.0.6/ /usr/local/mongodb
 
 cat >> /etc/rc.d/rc.local <<EOL
+sleep 20
 /usr/local/mongodb/bin/mongod -f /etc/mongodb/standalone.conf
 EOL
 
@@ -389,8 +389,6 @@ EOL
 cat  > /etc/httpd/conf.d/rockmongo.conf <<EOL
 Alias /rockmongo /vagrant/rockmongo
 EOL
-apachectl restart
-
 SHELL
 #=end
 
@@ -401,8 +399,7 @@ SHELL
 sed -c -i "s/\\(datadir *= *\\).*/\\1\\/mnt\\/disk\\/mysqldata/" /etc/my.cnf.d/community-mysql-server.cnf
 sed -c -i "s/\\(log\\-error *= *\\).*/\\1\\/mnt\\/disk\\/mysqld\\.log/" /etc/my.cnf.d/community-mysql-server.cnf
 systemctl enable mysqld.service
-systemctl restart mysqld.service
-
+systemctl start mysqld.service
 SHELL
 #=end
 
@@ -430,8 +427,6 @@ SHELL
 #
 #
 #
-
-apachectl restart
 
 SHELL
 #=end
@@ -556,13 +551,6 @@ SHELL
 #=begin
   # vhost VME
   config.vm.provision "shell", inline: <<-SHELL
-apachectl restart
-SHELL
-#=end
-
-#=begin
-  # vhost VME
-  config.vm.provision "shell", inline: <<-SHELL
 cat >> /etc/motd <<EOL
 
 Welcome to VM-FDT! Please contact Max Deshkevich having any questions: 7workers@gmail.com
@@ -596,7 +584,7 @@ SHELL
 
   config.vm.provision "shell", inline: <<-SHELL
 echo ""
-echo "All done, now setup individual projects. Please restart VM first: vagrant halt; vagrant up"
+echo "All done, now setup individual projects. Please restart VM first: vagrant reload"
 echo ""
 SHELL
 
