@@ -128,6 +128,8 @@ Version Control > Git > SSH executable = Native
 
 Version Control > Git > Control repositories synchronously = YES
 
+Tools > Vagrant : Vagrant executable: vagrant; Instance folder: /c/_projects/vm-fdt
+
 Languages & Frameworks > PHP > Include path > + > select /c/_projects/vm-fdt/shared/php_include
 
 Languages & Frameworks > PHP > Interpreter ... + name "PHP@vm-fdt" - Vagrant, set instance folder /c/_projects/vm-fdt; PHP executable: /usr/bin/php
@@ -137,8 +139,6 @@ Languages & Frameworks > PHP > PHPUnit + Interpeter PHP@vm-fdt; path to phpunit.
     Bootstrap file: /vagrant/PROJECTS/code/test/bootstrap.php
     
 Languages & Frameworks > PHP > Servers + name=vm-fdt (shared); host=vm-fdt; path mappings /c/_projects/vm-fdt/PROJECT/code -> /vagrant/PROJECTS/code
-
-Tools > Vagrant : Vagrant executable: vagrant; Instance folder: /c/_projects/vm-fdt
 
 
 ------------------------------------------------------------------------------------------------------------------------------------------
