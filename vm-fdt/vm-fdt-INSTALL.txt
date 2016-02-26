@@ -128,7 +128,7 @@ Version Control > Git > SSH executable = Native
 
 Version Control > Git > Control repositories synchronously = YES
 
-Languages & Frameworks > PHP > Include path > + > select /c/_projects/shared/php_include
+Languages & Frameworks > PHP > Include path > + > select /c/_projects/vm-fdt/shared/php_include
 
 Languages & Frameworks > PHP > Interpreter ... + name "PHP@vm-fdt" - Vagrant, set instance folder /c/_projects/vm-fdt; PHP executable: /usr/bin/php
 
