@@ -218,6 +218,7 @@ ln -s /usr/local/bin/php /usr/bin/php
 sed -c -i "s/\\(short_open_tag *= *\\).*/\\1On/" /usr/local/lib/php.ini
 sed -c -i "s/\\(memory_limit *= *\\).*/\\1512M/" /usr/local/lib/php.ini
 sed -c -i "s/\\(upload_max_filesize *= *\\).*/\\132M/" /usr/local/lib/php.ini
+sed -c -i "s/\\(max_execution_time *= *\\).*/\\160/" /usr/local/lib/php.ini
 cat >> /usr/local/lib/php.ini <<EOL
 
 error_log = /vagrant/logs/php_error.log
