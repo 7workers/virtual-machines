@@ -56,6 +56,10 @@ Vagrant.configure(2) do |config|
 mkdir -p /mnt/vagrant_data
 chown vagrant.vagrant /mnt/vagrant_data
 echo "cd /vagrant/" >> /home/vagrant/.bash_profile
+mkdir -p /home2
+chown vagrant.vagrant /home2
+mkdir -p /home2/storage.secondary
+chown vagrant.vagrant /home2/storage.secondary
 SHELL
 #=end
 
