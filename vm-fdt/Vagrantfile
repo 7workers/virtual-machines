@@ -36,7 +36,7 @@ Vagrant.configure(2) do |config|
   config.vm.synced_folder "#{vagrant_root}/shared", "/vagrant/shared", create: true
   config.vm.synced_folder "#{vagrant_root}/rockmongo", "/vagrant/rockmongo", create: true
 
-#  config.hostsupdater.aliases = ["fdt", "ipspecs", "acp.rg", "api.ipspecs", "acp.ipspecs", "rg", "vme", "api.vme", "acp.vme"]
+#  config.hostsupdater.aliases = ["fdt", "ipspecs", "acp.rg", "acps.rg", api.ipspecs", "acp.ipspecs", "rg", "vme", "api.vme", "acp.vme"]
   
   config.vm.provider "virtualbox" do |vb|
 
@@ -454,6 +454,7 @@ cat >> /var/www/html/index.html <<EOL
 </td><td>
 <a href="http://fdt/">FDT</a><br/>
 <a href="http://acp.rg/">ACP.RG</a><br/>
+<a href="http://acps.rg/">ACPS.RG</a><br/>
 <a href="http://www.rg/">www.RG</a><br/>
 <a href="http://ipspecs/">acp.IpSpecs</a><br/>
 <a href="http://www.ipspecs/">www.IpSpecs</a><br/>
@@ -514,7 +515,7 @@ SHELL
 #=end
 
 #=begin
-  # vhost ACP.RG
+  # vhost ACP.RG, ACPS.RG
   config.vm.provision "shell", inline: <<-SHELL
 cat >> /etc/httpd/conf.d/acprg.conf <<EOL
 <VirtualHost *:80>
@@ -524,8 +525,15 @@ cat >> /etc/httpd/conf.d/acprg.conf <<EOL
     CustomLog   /vagrant/logs/acp.rg-access.log common
     RewriteEngine On
 </VirtualHost>
+<VirtualHost *:80>
+    DocumentRoot /vagrant/fdt/code/docroot_acps
+    ServerName acps.rg
+    ErrorLog    /vagrant/logs/acps.rg-error.log
+    CustomLog   /vagrant/logs/acps.rg-access.log common
+    RewriteEngine On
+</VirtualHost>
 EOL
-echo "127.0.0.1 acp.rg" >> /etc/hosts
+echo "127.0.0.1 acp.rg acps.rg" >> /etc/hosts
 SHELL
 #=end
 
@@ -583,7 +591,7 @@ cat >> /etc/motd <<EOL
 Welcome to VM-FDT! Please contact Max Deshkevich having any questions: 7workers@gmail.com
 ------------------------------------------
 hosts :
-192.168.56.118 www.rg acp.rg dmt.loc fdt ipspecs rg botmon api.botmon acp.botmon api.ipspecs acp.ipspecs www.ipspecs vme acp.vme api.vme vm-fdt
+192.168.56.118 www.rg acp.rg acps.rg dmt.loc fdt ipspecs rg botmon api.botmon acp.botmon api.ipspecs acp.ipspecs www.ipspecs vme acp.vme api.vme vm-fdt
 
 http://vm-fdt/rockmongo/            http://vm-fdt/phpmyadmin/             http://vm-fdt:1080/ (mailcatcher)
 
