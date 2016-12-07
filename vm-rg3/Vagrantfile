@@ -9,7 +9,7 @@ Vagrant.configure(2) do |config|
   config.vm.box = "boxcutter/fedora24"
   config.vm.hostname = "vm-rg3"
   config.vm.box_check_update = false
-  config.vm.network "private_network", ip: "192.168.56.131"
+  config.vm.network :private_network, ip: "192.168.56.131"
 
   config.vm.synced_folder vagrant_root,                "/vagrant/",        disabled: true
   config.vm.synced_folder "#{vagrant_root}/logs",      "/vagrant/logs",    create: true
@@ -122,7 +122,8 @@ echo "install packagaes (dnf) this will take a while"
 echo "--------------------------------------------------------------------------------"
 echo "--------------------------------------------------------------------------------"
 
-/bin/dnf install -y nano mc nc htop psmisc telnet bind-utils
+/bin/dnf update -y dnf*
+/bin/dnf install -y nano mc nc htop psmisc telnet bind-utils elinks
 /bin/dnf install -y nginx
 /bin/dnf install -y memcached
 /bin/dnf install -y tor torsocks
@@ -445,32 +446,32 @@ echo "--------------------------------------------------------------------------
 
 mkdir -p /usr/src/
 cd /usr/src/
-wget -nv http://php.net/distributions/php-7.0.12.tar.bz2 -O php-7.0.12.tar.bz2
-tar -xjf php-7.0.12.tar.bz2
-cd php-7.0.12
-./configure --prefix=/usr/local/php-7.0.12 --enable-fpm --enable-opcache --enable-intl --enable-sockets --enable-pcntl --enable-gd-native-ttf --with-libdir=lib64 --enable-ftp --enable-mbstring --enable-exif --with-openssl --with-pspell --with-jpeg-dir=/usr --with-png-dir=/usr --with-freetype-dir=/usr --with-gd --enable-gd-native-ttf --enable-inline-optimization --with-curl --with-kerberos --with-gettext --with-readline --with-zlib --with-zlib-dir=/usr --with-bz2 --with-mcrypt --with-tidy --enable-zip --enable-pcntl --enable-soap --enable-calendar --enable-sockets
+wget -nv http://php.net/distributions/php-7.1.0.tar.bz2 -O php-7.1.0.tar.bz2
+tar -xjf php-7.1.0.tar.bz2
+cd php-7.1.0
+./configure --prefix=/usr/local/php-7.1.0 --enable-fpm --enable-opcache --enable-intl --enable-sockets --enable-pcntl --enable-gd-native-ttf --with-libdir=lib64 --enable-ftp --enable-mbstring --enable-exif --with-openssl --with-pspell --with-jpeg-dir=/usr --with-png-dir=/usr --with-freetype-dir=/usr --with-gd --enable-gd-native-ttf --enable-inline-optimization --with-curl --with-kerberos --with-gettext --with-readline --with-zlib --with-zlib-dir=/usr --with-bz2 --with-mcrypt --with-tidy --enable-zip --enable-pcntl --enable-soap --enable-calendar --enable-sockets
 make -j2
 make install
 
-cp /usr/local/php-7.0.12/etc/php-fpm.conf.default /usr/local/php-7.0.12/etc/php-fpm.conf
-cp /usr/src/php-7.0.12/php.ini-development /usr/local/php-7.0.12/lib/php.ini
+cp /usr/local/php-7.1.0/etc/php-fpm.conf.default /usr/local/php-7.1.0/etc/php-fpm.conf
+cp /usr/src/php-7.1.0/php.ini-development /usr/local/php-7.1.0/lib/php.ini
 
-ln -s /usr/local/php-7.0.12 /usr/local/php
+ln -s /usr/local/php-7.1.0 /usr/local/php
 ln -s /usr/local/php/bin/php /usr/bin/php 
 ln -s /usr/local/php/bin/phpize /usr/bin/phpize
 ln -s /usr/local/php/bin/pecl /usr/bin/pecl
 ln -s /usr/local/php/bin/php-config /usr/bin/php-config
-ln -s /usr/local/php-7.0.12/sbin/php-fpm /usr/sbin/php-fpm
-ln -s /usr/local/php-7.0.12/lib/php.ini /usr/local/lib/php.ini
+ln -s /usr/local/php-7.1.0/sbin/php-fpm /usr/sbin/php-fpm
+ln -s /usr/local/php-7.1.0/lib/php.ini /usr/local/lib/php.ini
 
-cp /usr/local/php-7.0.12/etc/php-fpm.d/www.conf.default /usr/local/php-7.0.12/etc/php-fpm.d/vm-rg3.conf.default
-cp /usr/local/php-7.0.12/etc/php-fpm.d/vm-rg3.conf.default /usr/local/php-7.0.12/etc/php-fpm.d/vm-rg3.conf
+cp /usr/local/php-7.1.0/etc/php-fpm.d/www.conf.default /usr/local/php-7.1.0/etc/php-fpm.d/vm-rg3.conf.default
+cp /usr/local/php-7.1.0/etc/php-fpm.d/vm-rg3.conf.default /usr/local/php-7.1.0/etc/php-fpm.d/vm-rg3.conf
 
 sed -c -i "s/\\(user *= *\\).*/\\1vagrant/" /usr/local/php/etc/php-fpm.d/vm-rg3.conf
 sed -c -i "s/\\(group *= *\\).*/\\1vagrant/" /usr/local/php/etc/php-fpm.d/vm-rg3.conf
 
 
-cat >> /usr/local/php-7.0.12/etc/php-fpm.conf <<EOL
+cat >> /usr/local/php-7.1.0/etc/php-fpm.conf <<EOL
 
 [global]
 error_log = /vagrant/logs/php-fpm-error.log
@@ -478,7 +479,7 @@ error_log = /vagrant/logs/php-fpm-error.log
 EOL
 
 sed -c -i "s/\\(short_open_tag *= *\\).*/\\1On/" /usr/local/lib/php.ini
-sed -c -i "s/\\(memory_limit *= *\\).*/\\1512M/" /usr/local/lib/php.ini
+sed -c -i "s/\\(memory_limit *= *\\).*/\\1256M/" /usr/local/lib/php.ini
 sed -c -i "s/\\(upload_max_filesize *= *\\).*/\\132M/" /usr/local/lib/php.ini
 sed -c -i "s/\\(max_execution_time *= *\\).*/\\160/" /usr/local/lib/php.ini
 
@@ -608,7 +609,7 @@ echo "--------------------------------------------------------------------------
 
 /usr/bin/pecl install xdebug
 printf "\n" | /usr/bin/pecl install amqp-1.7.1
-/usr/bin/pecl install mongodb-1.2.0alpha3
+/usr/bin/pecl install mongodb-1.2.0
 
 cat >> /usr/local/lib/php.ini <<EOL
 
@@ -837,13 +838,13 @@ cat >> /etc/motd <<EOL
 Welcome to VM-RG3! Please contact Max Deshkevich having any questions: 7workers@gmail.com
 ------------------------------------------
 hosts :
-192.168.56.131 www.rg api.rg acp.rg acps.rg dmt.loc fdt ipspecs rg botmon api.botmon acp.botmon api.ipspecs acp.ipspecs www.ipspecs vme acp.vme api.vme vm-fdt
+192.168.56.131 www.rg api.rg acp.rg acps.rg fdt ipspecs rg botmon api.botmon acp.botmon api.ipspecs acp.ipspecs www.ipspecs vme acp.vme api.vme vm-fdt
 
 http://vm-rg3.phpmyadmin/             http://vm-rg3:1080/ (mailcatcher)       http://vm-rg3:15672/ (RabbitMQ ACP)
 
 $ tail -n 50 /vagrant/logs/php_error.log
 $ sudo su -
-$ sudo apachectl restart
+$ sudo pkill php-fpm
 $ echo 'flush_all' | nc localhost 11211
 $ xdebug-start
 $ xdebug-stop
