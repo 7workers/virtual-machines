@@ -14,6 +14,7 @@ Vagrant.configure(2) do |config|
   config.vm.synced_folder vagrant_root,                "/vagrant/",        disabled: true
   config.vm.synced_folder "#{vagrant_root}/logs",      "/vagrant/logs",    create: true
   config.vm.synced_folder "#{vagrant_root}/fdt",       "/vagrant/fdt",     create: true
+  config.vm.synced_folder "#{vagrant_root}/pmt",       "/vagrant/pmt",     create: true
   config.vm.synced_folder "#{vagrant_root}/ipspecs",   "/vagrant/ipspecs", create: true
   config.vm.synced_folder "#{vagrant_root}/vme",       "/vagrant/vme",     create: true
   config.vm.synced_folder "#{vagrant_root}/shared",    "/vagrant/shared",  create: true
@@ -428,6 +429,93 @@ EOL
 
 
 
+
+cat  > /etc/nginx/conf.d/apipmt.conf  <<EOL
+
+server {
+    server_name api.pmt;
+    access_log /vagrant/logs/nginx/apipmt_access.log;
+    error_log /vagrant/logs/nginx/apipmt_error.log;
+    root /vagrant/pmt/code/docroot_api;
+    
+    location / {
+    
+    }
+    
+    location ~ \\.php$ {
+        include /etc/nginx/fastcgi_params;
+        fastcgi_pass  127.0.0.1:9000;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME \\$document_root\\$fastcgi_script_name;
+    }
+}
+
+EOL
+
+cat  > /etc/nginx/conf.d/wwwpmt.conf  <<EOL
+
+server {
+    server_name www.pmt;
+    access_log /vagrant/logs/nginx/wwwpmt_access.log;
+    error_log /vagrant/logs/nginx/wwwpmt_error.log;
+    root /vagrant/pmt/code/docroot_www;
+
+    location / {
+        index  index.html index.php;
+    }
+    
+    location ~ \\.php$ {
+        include /etc/nginx/fastcgi_params;
+        fastcgi_pass  127.0.0.1:9000;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME \\$document_root\\$fastcgi_script_name;
+    }
+}
+
+EOL
+
+cat  > /etc/nginx/conf.d/acppmt.conf  <<EOL
+
+server {
+    server_name acp.pmt;
+    access_log /vagrant/logs/nginx/acppmt_access.log;
+    error_log /vagrant/logs/nginx/acppmt_error.log;
+    root /vagrant/pmt/code/docroot_acp;
+
+    location / {
+        index  index.html index.php;
+    }
+    
+    location ~ \\.php$ {
+        include /etc/nginx/fastcgi_params;
+        fastcgi_pass  127.0.0.1:9000;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME \\$document_root\\$fastcgi_script_name;
+    }
+}
+
+server {
+    server_name acps.pmt;
+    access_log /vagrant/logs/nginx/acpspmt_access.log;
+    error_log /vagrant/logs/nginx/acpspmt_error.log;
+    root /vagrant/pmt/code/docroot_acps;
+
+    location / {
+        index  index.html index.php;
+    }
+    
+    location ~ \\.php$ {
+        include /etc/nginx/fastcgi_params;
+        fastcgi_pass  127.0.0.1:9000;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME \\$document_root\\$fastcgi_script_name;
+    }
+}
+
+EOL
+
+
+
 SHELL
 #=end
 
@@ -770,7 +858,7 @@ server {
 
 EOL
 
-echo "127.0.0.1 fdt www.fdt api.rg api.rg acp.rg www.rg acp.vme www.vme vm-rg3 api.ipspecs acp.ipspecs www.ipspecs" >> /etc/hosts
+echo "127.0.0.1 api.pmt www.pmt pmt acp.pmt acps.pmt fdt www.fdt api.rg api.rg acp.rg www.rg acp.vme www.vme vm-rg3 api.ipspecs acp.ipspecs www.ipspecs" >> /etc/hosts
 
 SHELL
 #=end
@@ -838,7 +926,7 @@ cat >> /etc/motd <<EOL
 Welcome to VM-RG3! Please contact Max Deshkevich having any questions: 7workers@gmail.com
 ------------------------------------------
 hosts :
-192.168.56.131 www.rg api.rg acp.rg acps.rg fdt ipspecs rg botmon api.botmon acp.botmon api.ipspecs acp.ipspecs www.ipspecs vme acp.vme api.vme vm-fdt
+192.168.56.131 www.rg api.rg acp.rg acps.rg fdt ipspecs rg botmon api.botmon acp.botmon api.ipspecs acp.ipspecs www.ipspecs vme acp.vme api.vme vm-fdt api.pmt www.pmt pmt acp.pmt acps.pmt
 
 http://vm-rg3.phpmyadmin/             http://vm-rg3:1080/ (mailcatcher)       http://vm-rg3:15672/ (RabbitMQ ACP)
 
