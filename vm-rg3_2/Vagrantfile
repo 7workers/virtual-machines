@@ -82,7 +82,7 @@ SHELL
 
 Vagrant.configure(2) do |config|
 
-  config.vm.box = "boxcutter/fedora24"
+  config.vm.box = "boxcutter/fedora25"
   config.vm.hostname = __name_vm
   config.vm.box_check_update = false
   config.vm.network :private_network, ip: __ip_vm
@@ -189,23 +189,23 @@ SHELL
 
   
 config.vm.provision "shell", keep_color: true, name: "basic system update", inline: "dnf update -y dnf*"
-config.vm.provision "shell", keep_color: true, name: "basic utilites install", inline: "dnf update -y ruby ruby-devel rubygems redhat-rpm-config bind-libs sqlite-devel nano mc nc htop psmisc telnet bind-utils elinks redhat-rpm-config bind-libs"
-config.vm.provision "shell", keep_color: true, name: "install specific apps and utils", inline: "dnf update -y #{__install_extra}"
+config.vm.provision "shell", keep_color: true, name: "basic utilites install", inline: "dnf install -y ruby ruby-devel rubygems redhat-rpm-config bind-libs sqlite-devel nano mc nc htop psmisc telnet bind-utils elinks redhat-rpm-config bind-libs"
+config.vm.provision "shell", keep_color: true, name: "install specific apps and utils", inline: "dnf install -y #{__install_extra}"
 
 if __do__nginx
-  config.vm.provision "shell", keep_color: true, name: "install nginx", inline: "dnf update -y nginx"
+  config.vm.provision "shell", keep_color: true, name: "install nginx", inline: "dnf install -y nginx"
 end
 
 if __do__php
-  config.vm.provision "shell", keep_color: true, name: "install PHP dependences", inline: "dnf update -y git gcc gcc-c++ libxml2-devel pkgconfig openssl-devel bzip2-devel curl-devel libpng-devel libjpeg-devel libXpm-devel freetype-devel gmp-devel libmcrypt-devel aspell-devel recode-devel autoconf bison re2c libicu-devel readline-devel libtidy-devel libmemcached-devel librabbitmq-devel"
+  config.vm.provision "shell", keep_color: true, name: "install PHP dependences", inline: "dnf install -y git gcc gcc-c++ libxml2-devel pkgconfig openssl-devel bzip2-devel curl-devel libpng-devel libjpeg-devel libXpm-devel freetype-devel gmp-devel libmcrypt-devel aspell-devel recode-devel autoconf bison re2c libicu-devel readline-devel libtidy-devel libmemcached-devel librabbitmq-devel"
 end
 
 if __do__memcached
-  config.vm.provision "shell", keep_color: true, name: "install memecage server", inline: "dnf update -y memcached"
+  config.vm.provision "shell", keep_color: true, name: "install memecage server", inline: "dnf install -y memcached"
 end
   
 if __do__rabbitmq
-  config.vm.provision "shell", keep_color: true, name: "install rabbitMQ", inline: "dnf update -y rabbitmq-server"
+  config.vm.provision "shell", keep_color: true, name: "install rabbitMQ", inline: "dnf install -y rabbitmq-server"
 end
 
 
