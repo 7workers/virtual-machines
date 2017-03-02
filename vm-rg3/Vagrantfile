@@ -510,6 +510,10 @@ server {
         fastcgi_index index.php;
         fastcgi_param SCRIPT_FILENAME \\$document_root\\$fastcgi_script_name;
     }
+    
+    location ~ .(ttf|ttc|otf|eot|woff|woff2|font.css|css|js)$ {                                                                                                                                                                                                           
+      add_header Access-Control-Allow-Origin "*";                                                                                                                                                                                                                           
+    } 
 }
 
 EOL
@@ -698,12 +702,14 @@ echo "--------------------------------------------------------------------------
 /usr/bin/pecl install xdebug
 printf "\n" | /usr/bin/pecl install amqp-1.7.1
 /usr/bin/pecl install mongodb-1.2.0
+/usr/bin/pecl install mailparse
 
 cat >> /usr/local/lib/php.ini <<EOL
 
 zend_extension=xdebug.so
 extension=amqp.so
 extension=mongodb.so
+extension=mailparse.so
 
 [xdebug]
 xdebug.remote_enable=1
@@ -884,7 +890,7 @@ cat >> /etc/rc.d/rc.local <<EOL
 EOL
 
 cat >> /usr/local/lib/php.ini <<EOL
-sendmail_path = /usr/bin/env catchmail -f some@from.address
+sendmail_path = /usr/local/bin/catchmail -f some@from.address
 EOL
 
 /usr/local/bin/mailcatcher --http-ip 192.168.56.131
