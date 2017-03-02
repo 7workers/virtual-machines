@@ -475,8 +475,34 @@ cat > /var/www/phpmyadmin/config.inc.php <<EOL
 EOL
 SHELL
 
-  config.vm.provision "shell", keep_color: true, inline: __shell__setup_vhost, args: ["#{__name_vm}.phpMyAdmin", "/var/www/phpmyadmin"]
-  config.vm.provision "shell", keep_color: true, inline: "echo '127.0.0.1 $1' >> /etc/hosts", args: ["#{__name_vm}.phpMyAdmin"]
+  config.vm.provision "shell", keep_color: true, inline: <<-SHELL
+  
+  
+cat  > /etc/nginx/conf.d/phpmyadmin.conf <<EOL
+
+server {
+    server_name vm-dev1.phpmyadmin;
+    access_log /vagrant/logs/nginx/phpmyadmin_access.log;
+    error_log /vagrant/logs/nginx/phpmyadmin_error.log;
+    root /var/www/phpmyadmin;
+
+    location / {
+        index  index.html index.php;
+    }
+    
+    location ~ \\.php$ {
+        include /etc/nginx/fastcgi_params;
+        fastcgi_pass  127.0.0.1:9000;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME \\$document_root\\$fastcgi_script_name;
+    }
+}
+
+EOL
+
+SHELL
+  
+  config.vm.provision "shell", keep_color: true, inline: "echo '127.0.0.1 #{__name_vm}.phpMyAdmin' >> /etc/hosts"
   
 end
 
@@ -578,9 +604,12 @@ end
 if __do__mailcatcher
   config.vm.provision "shell", name: "start mailcatcher", keep_color: true, run: "always", inline: "/usr/local/bin/mailcatcher --http-ip #{__ip_vm}"
 end
-  
 
 
+config.vm.provision "shell", keep_color: true, inline: "echo ''"
+config.vm.provision "shell", keep_color: true, inline: "echo ''"
+config.vm.provision "shell", keep_color: true, inline: "echo 'provision is done. do vagrant ssh to check VM. do vagrant reload before proceeding'"
+config.vm.provision "shell", keep_color: true, inline: "echo ''"
 
   
 end
