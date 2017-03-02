@@ -1,0 +1,573 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+vagrant_root = File.dirname(__FILE__)
+
+__name_vm = "vm-dev2"
+__ip_vm = "192.168.56.139"
+__fname_disk = "#{vagrant_root}/#{__name_vm}-db.vdi"
+__tz = "Europe/Minsk"
+__php_version = "7.1.2"
+__amqp_version = "1.8.1"
+__mongodb_php_version = "1.2.5"
+
+__install_extra = "words ImageMagick rrdtool"
+
+__url_mongo_download = "https://fastdl.mongodb.org/linux/"
+__mongo_version_download = "mongodb-linux-x86_64-amazon-3.4.2"
+
+__phpmyadmin_version = "4.6.6"
+    
+__do__net_restart = false
+__do__bootloader_setup = true
+__do__secondary_disk = true
+__do__rabbitmq = true
+__do__mailcatcher = true
+__do__mongodb = true
+__do__mysql = true
+__do__tor = true
+__do__php = true
+__do__phpunit = true
+__do__phpmyadmin = true
+__do__memcached = true
+__do__nginx = true
+
+__vhosts = [
+  ["acp.rg", "fdt/code/docroot_acp"],
+  ["acps.rg", "fdt/code/docroot_acps"],
+  ["www.rg", "fdt/code/docroot_www"],
+  ["api.rg", "fdt/code/docroot_api"],
+  ["acp.vme", "vme/code/docroot_acp"],
+  ["api.vme", "vme/code/docroot_api"],
+  ["www.vme", "vme/code/docroot_website"],
+  ["acp.pmt", "pmt/code/docroot_acp"],
+  ["acps.pmt", "pmt/code/docroot_acps"],
+  ["www.pmt", "pmt/code/docroot_www"],
+  ["api.pmt", "pmt/code/docroot_api"],
+  ["api.ipspecs", "ipspecs/code/docroot_api"],
+  ["www.ipspecs", "ipspecs/code/docroot_website"],
+  ["acp.ipspecs", "ipspecs/code/docroot_acp"],
+  ["clkprx.ipspecs", "ipspecs/code/docroot_clkprx"],
+]
+
+
+# hostname, document_root
+__shell__setup_vhost = <<-SHELL
+
+echo "setup project vhost: $1"
+      
+cat > /etc/nginx/conf.d/$1.conf <<EOL
+
+server {
+    server_name $1;
+    access_log /vagrant/logs/nginx/$1_access.log;
+    error_log /vagrant/logs/nginx/$1_error.log;
+    root /vagrant/$2/;
+
+    location / {
+        index  index.html index.php;
+    }
+    
+    location ~ \\.php$ {
+        include /etc/nginx/fastcgi_params;
+        fastcgi_pass  127.0.0.1:9000;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME \\$document_root\\$fastcgi_script_name;
+    }
+}
+
+EOL
+SHELL
+
+
+Vagrant.configure(2) do |config|
+
+  config.vm.box = "boxcutter/fedora24"
+  config.vm.hostname = __name_vm
+  config.vm.box_check_update = false
+  config.vm.network :private_network, ip: __ip_vm
+
+  config.vm.synced_folder vagrant_root,                "/vagrant/",        disabled: true
+  config.vm.synced_folder "#{vagrant_root}/logs",      "/vagrant/logs",    create: true
+  config.vm.synced_folder "#{vagrant_root}/fdt",       "/vagrant/fdt",     create: true
+  config.vm.synced_folder "#{vagrant_root}/pmt",       "/vagrant/pmt",     create: true
+  config.vm.synced_folder "#{vagrant_root}/ipspecs",   "/vagrant/ipspecs", create: true
+  config.vm.synced_folder "#{vagrant_root}/vme",       "/vagrant/vme",     create: true
+  config.vm.synced_folder "#{vagrant_root}/shared",    "/vagrant/shared",  create: true
+  config.vm.synced_folder "#{vagrant_root}/xdebug",    "/vagrant/xdebug",  create: true
+  
+  config.vm.provider "virtualbox" do |vb|
+
+        vb.memory = "2048"
+        vb.cpus = 2
+        vb.name = __name_vm
+
+	if __do__secondary_disk
+	  
+	  unless File.exists?(__fname_disk)
+	      vb.customize ['createhd', '--filename', __fname_disk, '--variant', 'Standard', '--size', 60*1024]
+	  end
+	  
+	  vb.customize ['storageattach', :id,  '--storagectl', 'IDE Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', __fname_disk]
+	  
+	end
+  end
+
+  
+  
+  
+if __do__secondary_disk
+
+  config.vm.provision "shell", keep_color: true, name: "secondary disk setup", inline: <<-SHELL
+parted /dev/sdb mklabel msdos
+parted /dev/sdb mkpart primary 512 100%
+mkfs.xfs /dev/sdb1
+mkdir -p /mnt/disk
+echo `blkid /dev/sdb1 | awk '{print$2}' | sed -e 's/"//g'` /mnt/disk xfs noatime,nobarrier 0 0 >> /etc/fstab
+mount /mnt/disk
+SHELL
+  
+end
+  
+
+
+
+if __do__net_restart
+  config.vm.provision "shell", keep_color: true, inline: "/etc/init.d/network restart"
+end
+
+
+
+
+  config.vm.provision "shell", keep_color: true, name: "basic setup", inline: <<-SHELL
+echo "127.0.0.1 localhost #{__name_vm}" >> /etc/hosts
+timedatectl set-timezone #{__tz}
+cat > /etc/rc.d/rc.local <<EOL
+#!/bin/bash
+
+EOL
+chmod a+x /etc/rc.d/rc.local
+systemctl enable rc-local.service
+
+mkdir -p /vagrant/logs
+chmod a+rw /vagrant/logs/
+
+
+SHELL
+
+
+
+if __do__bootloader_setup
+
+  config.vm.provision "shell", keep_color: true, name: "setup bootloader", inline: <<-SHELL
+sed -c -i "s/\\(GRUB_TIMEOUT *= *\\).*/\\11/" /etc/default/grub
+sed -c -i "s/rhgb//" /etc/default/grub
+sed -c -i "s/quiet//" /etc/default/grub
+grub2-mkconfig -o /etc/grub2.cfg
+SHELL
+end
+
+
+
+  
+#=begin  
+  config.vm.provision "shell", keep_color: true, name: "setup additional storages", inline: <<-SHELL
+mkdir -p /mnt/vagrant_data
+mkdir -p /mnt/vagrant_data/fdt/images
+mkdir -p /mnt/vagrant_data/fdt/pics
+chown -R vagrant.vagrant /mnt/vagrant_data
+echo "cd /vagrant/" >> /home/vagrant/.bash_profile
+mkdir -p /home2
+chown vagrant.vagrant /home2
+mkdir -p /home2/storage.secondary
+chown vagrant.vagrant /home2/storage.secondary
+
+SHELL
+#=end
+  
+
+
+  
+config.vm.provision "shell", keep_color: true, name: "basic system update", inline: "dnf update -y dnf*"
+config.vm.provision "shell", keep_color: true, name: "basic utilites install", inline: "dnf update -y ruby ruby-devel rubygems redhat-rpm-config bind-libs sqlite-devel nano mc nc htop psmisc telnet bind-utils elinks redhat-rpm-config bind-libs"
+config.vm.provision "shell", keep_color: true, name: "install specific apps and utils", inline: "dnf update -y #{__install_extra}"
+
+if __do__nginx
+  config.vm.provision "shell", keep_color: true, name: "install nginx", inline: "dnf update -y nginx"
+end
+
+if __do__php
+  config.vm.provision "shell", keep_color: true, name: "install PHP dependences", inline: "dnf update -y git gcc gcc-c++ libxml2-devel pkgconfig openssl-devel bzip2-devel curl-devel libpng-devel libjpeg-devel libXpm-devel freetype-devel gmp-devel libmcrypt-devel aspell-devel recode-devel autoconf bison re2c libicu-devel readline-devel libtidy-devel libmemcached-devel librabbitmq-devel"
+end
+
+if __do__memcached
+  config.vm.provision "shell", keep_color: true, name: "install memecage server", inline: "dnf update -y memcached"
+end
+  
+if __do__rabbitmq
+  config.vm.provision "shell", keep_color: true, name: "install rabbitMQ", inline: "dnf update -y rabbitmq-server"
+end
+
+
+
+
+
+
+if __do__rabbitmq
+  
+  config.vm.provision "shell", keep_color: true, name: "rabbitMQ enable admin plugin", inline: "rabbitmq-plugins enable rabbitmq_management"
+  config.vm.provision "shell", keep_color: true, inline: "systemctl disable rabbitmq-server.service"
+end
+
+if __do__memcached
+  config.vm.provision "shell", keep_color: true, inline: "systemctl disable memcached.service"
+end
+
+
+
+if __do__php
+
+  config.vm.provision "shell", keep_color: true, inline: "mkdir -p /vagrant/shared/php_include/"
+
+  config.vm.provision "shell", keep_color: true, name: "download and unpack PHP", inline: <<-SHELL
+mkdir -p /usr/src/
+cd /usr/src/
+wget -nv http://php.net/distributions/php-#{__php_version}.tar.bz2 -O php-#{__php_version}.tar.bz2
+tar -xjf php-#{__php_version}.tar.bz2
+cd php-#{__php_version}
+
+make -j2
+make install
+
+cp /usr/local/php-#{__php_version}/etc/php-fpm.conf.default /usr/local/php-#{__php_version}/etc/php-fpm.conf
+cp /usr/src/php-#{__php_version}/php.ini-development /usr/local/php-#{__php_version}/lib/php.ini
+
+ln -s /usr/local/php-#{__php_version} /usr/local/php
+ln -s /usr/local/php/bin/php /usr/bin/php 
+ln -s /usr/local/php/bin/phpize /usr/bin/phpize
+ln -s /usr/local/php/bin/pecl /usr/bin/pecl
+ln -s /usr/local/php/bin/php-config /usr/bin/php-config
+ln -s /usr/local/php-#{__php_version}/sbin/php-fpm /usr/sbin/php-fpm
+ln -s /usr/local/php-#{__php_version}/lib/php.ini /usr/local/lib/php.ini
+
+cp /usr/local/php-#{__php_version}/etc/php-fpm.d/www.conf.default /usr/local/php-#{__php_version}/etc/php-fpm.d/#{__name_vm}.conf.default
+cp /usr/local/php-#{__php_version}/etc/php-fpm.d/#{__name_vm}.conf.default /usr/local/php-#{__php_version}/etc/php-fpm.d/#{__name_vm}.conf
+
+sed -c -i "s/\\(user *= *\\).*/\\1vagrant/" /usr/local/php/etc/php-fpm.d/#{__name_vm}.conf
+sed -c -i "s/\\(group *= *\\).*/\\1vagrant/" /usr/local/php/etc/php-fpm.d/#{__name_vm}.conf
+
+
+cat >> /usr/local/php-#{__php_version}/etc/php-fpm.conf <<EOL
+
+[global]
+error_log = /vagrant/logs/php-fpm-error.log
+
+EOL
+
+sed -c -i "s/\\(short_open_tag *= *\\).*/\\1On/" /usr/local/lib/php.ini
+sed -c -i "s/\\(memory_limit *= *\\).*/\\1256M/" /usr/local/lib/php.ini
+sed -c -i "s/\\(upload_max_filesize *= *\\).*/\\132M/" /usr/local/lib/php.ini
+sed -c -i "s/\\(max_execution_time *= *\\).*/\\160/" /usr/local/lib/php.ini
+
+cat >> /usr/local/lib/php.ini <<EOL
+error_log = /vagrant/logs/php_error.log
+EOL
+SHELL
+  
+
+config.vm.provision "shell", keep_color: true, name: "setup PHP modules", inline: <<-SHELL
+/usr/bin/pecl install xdebug
+printf "\n" | /usr/bin/pecl install amqp-#{__amqp_version}
+/usr/bin/pecl install mongodb-#{__mongodb_php_version}
+/usr/bin/pecl install mailparse
+
+cat >> /usr/local/lib/php.ini <<EOL
+
+zend_extension=xdebug.so
+extension=amqp.so
+extension=mongodb.so
+extension=mailparse.so
+
+[xdebug]
+xdebug.remote_enable=1
+xdebug.remote_host="192.168.56.1"
+xdebug.remote_port=9000
+xdebug.remote_idkey=XDEBUGIDKEY
+xdebug.profiler_enable=Off
+xdebug.profiler_trigger=On
+xdebug.profiler_output_dir="/vagrant/xdebug"
+
+[Date]
+date.timezone = #{__tz}
+
+EOL
+
+SHELL
+
+
+
+
+config.vm.provision "shell", keep_color: true, name: "setup xedbug shortcuts", inline: <<-SHELL
+cat >> /home/vagrant/.bash_profile <<EOL
+alias xdebug-start='export XDEBUG_CONFIG="idekey=PHPSTORM"; export PHP_IDE_CONFIG="serverName=#{__name_vm}"'
+alias xdebug-stop='unset XDEBUG_CONFIG; unset PHP_IDE_CONFIG'
+EOL
+SHELL
+
+
+
+
+config.vm.provision "shell", keep_color: true, name: "setup composer", inline: <<-SHELL
+cd /usr/src/
+php -r "readfile('https://getcomposer.org/installer');" > composer-setup.php
+php composer-setup.php
+php -r "unlink('composer-setup.php');"
+cp composer.phar /vagrant/shared/php_include/composer.phar
+mv composer.phar /usr/local/bin/composer
+chmod a+rw /usr/local/bin/composer
+SHELL
+
+
+
+
+if __do__memcached
+  config.vm.provision "shell", keep_color: true, name: "setup PHP memcached module", inline: <<-SHELL
+cd /usr/src
+git clone https://github.com/php-memcached-dev/php-memcached.git
+cd php-memcached
+git checkout php7
+phpize
+./configure --disable-memcached-sasl
+make -j2
+make install
+
+cat >> /usr/local/lib/php.ini <<EOL
+
+extension=memcached.so
+
+EOL
+SHELL
+end
+
+
+
+
+if __do__phpunit
+  
+  config.vm.provision "shell", keep_color: true, name: "setup PHP unit", inline: <<-SHELL
+cd /usr/src/
+wget -nv https://phar.phpunit.de/phpunit.phar
+chmod +x phpunit.phar
+cp phpunit.phar /vagrant/shared/php_include/phpunit.phar
+mv phpunit.phar /usr/local/bin/phpunit
+
+SHELL
+end
+
+
+
+end
+
+
+
+
+
+
+if __do__nginx
+  
+  config.vm.provision "shell", keep_color: true, name: "setup nginx", inline: <<-SHELL
+systemctl disbale nginx.service
+sed -c -i "s/sendfile.*/sendfile off;/" /etc/nginx/nginx.conf
+mkdir -p /vagrant/logs/nginx
+
+SHELL
+
+__vhosts.each do |_vhost_each|
+  
+  config.vm.provision "shell", keep_color: true, inline: __shell__setup_vhost, args: _vhost_each
+  config.vm.provision "shell", keep_color: true, inline: "echo '127.0.0.1 $1' >> /etc/hosts", args: [_vhost_each[0]]
+end
+
+  
+end
+
+
+
+
+if __do__mongodb
+  config.vm.provision "shell", name: "install mongodb", keep_color: true, inline: <<-SHELL
+cd /usr/src/
+
+wget -nv http://downloads.mongodb.org/linux/mongodb-linux-x86_64-amazon-3.0.6.tgz -O mongodb-linux-x86_64-amazon-3.0.6.tgz
+wget -nv #{__url_mongo_download}#{__mongo_version_download}.tgz -O #{__mongo_version_download}.tgz
+tar -xzf #{__mongo_version_download}.tgz
+cp -R #{__mongo_version_download}/ /usr/local/mongodb
+
+mkdir /etc/mongodb
+cat > /etc/mongodb/standalone.conf <<EOL
+dbpath = /mnt/disk/mongodb
+storageEngine = wiredTiger
+logpath = /mnt/disk/mongodb/mongo.log
+fork = true
+EOL
+
+ln -s /usr/local/mongodb/bin/mongo /usr/local/bin/mongo
+ln -s /usr/local/mongodb/bin/mongodump /usr/local/bin/mongodump
+ln -s /usr/local/mongodb/bin/mongoexport /usr/local/bin/mongoexport
+ln -s /usr/local/mongodb/bin/mongoimport /usr/local/bin/mongoimport
+ln -s /usr/local/mongodb/bin/mongorestore /usr/local/bin/mongorestore
+
+mkdir /mnt/disk/mongodb
+SHELL
+end
+
+
+if __do__phpmyadmin
+  
+  config.vm.provision "shell", name: "install mongodb", keep_color: true, inline: <<-SHELL
+  
+mkdir -p /var/www/phpmyadmin/
+
+cd /usr/src/
+wget -nv https://files.phpmyadmin.net/phpMyAdmin/#{__phpmyadmin_version}/phpMyAdmin-#{__phpmyadmin_version}-english.tar.bz2
+tar -xjf phpMyAdmin-#{__phpmyadmin_version}-english.tar.bz2
+cp -R phpMyAdmin-#{__phpmyadmin_version}-english /var/www/phpmyadmin
+
+cd /var/www/phpmyadmin/
+
+cat > /var/www/phpmyadmin/config.inc.php <<EOL
+<?php
+\\$i = 0;
+\\$i++;
+\\$cfg['Servers'][\\$i]['verbose'] = '#{__name_vm}';
+\\$cfg['Servers'][\\$i]['host'] = '127.0.0.1';
+\\$cfg['Servers'][\\$i]['port'] = '';
+\\$cfg['Servers'][\\$i]['socket'] = '';
+\\$cfg['Servers'][\\$i]['connect_type'] = 'tcp';
+\\$cfg['Servers'][\\$i]['auth_type'] = 'config';
+\\$cfg['Servers'][\\$i]['user'] = 'root';
+\\$cfg['Servers'][\\$i]['password'] = '';
+\\$cfg['Servers'][\\$i]['AllowNoPassword'] = true;
+\\$cfg['blowfish_secret'] = '5522d129ef83a1.90473684';
+\\$cfg['DefaultLang'] = 'en';
+\\$cfg['ServerDefault'] = 1;
+\\$cfg['UploadDir'] = '';
+\\$cfg['SaveDir'] = '';
+\\$cfg['CheckConfigurationPermissions'] = false;
+\\$cfg['LoginCookieRecall'] = false;
+\\$cfg['LoginCookieDeleteAll'] = false;
+\\$cfg['UserprefsDeveloperTab'] = true;
+\\$cfg['DBG']['sql'] = true;
+\\$cfg['NavigationDisplayLogo'] = false;
+\\$cfg['UserprefsDisallow'] = array('NavigationDisplayLogo');
+EOL
+SHELL
+
+  config.vm.provision "shell", keep_color: true, inline: __shell__setup_vhost, args: ["#{__name_vm}.phpMyAdmin", "/var/www/phpmyadmin"]
+  config.vm.provision "shell", keep_color: true, inline: "echo '127.0.0.1 $1' >> /etc/hosts", args: ["#{__name_vm}.phpMyAdmin"]
+  
+end
+
+
+
+if __do__mailcatcher
+  
+  config.vm.provision "shell", keep_color: true, name: "setup mailcatcher", inline: <<-SHELL
+  
+gem install mailcatcher
+
+cat >> /usr/local/lib/php.ini <<EOL
+sendmail_path = /usr/local/bin/catchmail -f some@from.address
+EOL
+SHELL
+  
+end
+
+
+
+
+
+
+
+
+
+__all_hosts = ""
+__vhosts.each do |_vhost_each|
+  __all_hosts += _vhost_each[0] + " "
+end
+
+config.vm.provision "shell", keep_color: true, name: "welcome message setup", inline: <<-SHELL
+
+cat >> /etc/motd <<EOL
+
+Welcome to #{__name_vm}! Please contact Max Deshkevich having any questions: 7workers@gmail.com
+------------------------------------------
+make sure you have in your hosts file :
+
+#{__ip_vm} #{__name_vm} #{__name_vm}.phpmyadmin #{__all_hosts}
+
+http://#{__name_vm}.phpmyadmin/             http://#{__name_vm}:1080/ (mailcatcher)       http://#{__name_vm}:15672/ (RabbitMQ ACP)
+
+$ tail -n 50 /vagrant/logs/php_error.log
+$ switch to root:   sudo su -
+$ kill PHP:         sudo pkill php-fpm
+$ flush memecage:   echo 'flush_all' | nc localhost 11211
+$                   xdebug-start
+$                   xdebug-stop
+
+EOL
+
+SHELL
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+if __do__net_restart
+  config.vm.provision "shell", name: "restart network", run: "always", keep_color: true, inline: "/etc/init.d/network restart"
+end
+
+config.vm.provision "shell", name: "sleeping 5 seconds...", inline: "sleep 5", run: "always"
+
+config.vm.provision "shell", name: "start PHP-FPM", keep_color: true, inline: "/usr/sbin/php-fpm", run: "always"
+config.vm.provision "shell", name: "start nginx", keep_color: true, inline: "systemctl start nginx.service", run: "always"
+
+if __do__rabbitmq
+  config.vm.provision "shell", name: "start rabbitMQ", keep_color: true, inline: "systemctl start rabbitmq-server.service", run: "always"
+end
+  
+if __do__memcached
+  config.vm.provision "shell", name: "start memcached", keep_color: true, run: "always", inline: "systemctl start memcached.service"
+end
+
+if __do__tor
+  config.vm.provision "shell", name: "start tor", keep_color: true, run: "always", inline: "systemctl start tor.service"
+end
+
+if __do__mysql
+  config.vm.provision "shell", name: "start mariadb", keep_color: true, run: "always", inline: "systemctl start mariadb.service"
+end
+
+if __do__mongodb
+  config.vm.provision "shell", name: "start mongodb", keep_color: true, run: "always", inline: "/usr/local/mongodb/bin/mongod -f /etc/mongodb/standalone.conf"
+end
+
+if __do__mailcatcher
+  config.vm.provision "shell", name: "start mailcatcher", keep_color: true, run: "always", inline: "/usr/local/bin/mailcatcher --http-ip #{__ip_vm}"
+end
+  
+
+
+
+  
+end
