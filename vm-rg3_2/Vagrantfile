@@ -8,7 +8,7 @@ __ip_vm = "192.168.56.139"
 __fname_disk = "#{vagrant_root}/#{__name_vm}-db.vdi"
 __tz = "Europe/Minsk"
 __php_version = "7.1.2"
-__amqp_version = "1.8.1"
+__amqp_version = "1.8.0"
 __mongodb_php_version = "1.2.5"
 
 __install_extra = "words ImageMagick rrdtool"
@@ -18,9 +18,10 @@ __mongo_version_download = "mongodb-linux-x86_64-amazon-3.4.2"
 
 __phpmyadmin_version = "4.6.6"
     
-__do__net_restart = false
-__do__bootloader_setup = true
+__do__net_restart = true
 __do__secondary_disk = true
+__do__bootloader_setup = true
+
 __do__rabbitmq = true
 __do__mailcatcher = true
 __do__mongodb = true
@@ -82,7 +83,7 @@ SHELL
 
 Vagrant.configure(2) do |config|
 
-  config.vm.box = "boxcutter/fedora25"
+  config.vm.box = "boxcutter/fedora24"
   config.vm.hostname = __name_vm
   config.vm.box_check_update = false
   config.vm.network :private_network, ip: __ip_vm
@@ -196,6 +197,10 @@ if __do__nginx
   config.vm.provision "shell", keep_color: true, name: "install nginx", inline: "dnf install -y nginx"
 end
 
+if __do__mysql
+  config.vm.provision "shell", keep_color: true, name: "install mariadb", inline: "dnf install -y mysql-server"
+end
+
 if __do__php
   config.vm.provision "shell", keep_color: true, name: "install PHP dependences", inline: "dnf install -y git gcc gcc-c++ libxml2-devel pkgconfig openssl-devel bzip2-devel curl-devel libpng-devel libjpeg-devel libXpm-devel freetype-devel gmp-devel libmcrypt-devel aspell-devel recode-devel autoconf bison re2c libicu-devel readline-devel libtidy-devel libmemcached-devel librabbitmq-devel"
 end
@@ -208,6 +213,9 @@ if __do__rabbitmq
   config.vm.provision "shell", keep_color: true, name: "install rabbitMQ", inline: "dnf install -y rabbitmq-server"
 end
 
+if __do__tor
+  config.vm.provision "shell", keep_color: true, name: "install TOR", inline: "dnf install -y tor torsocks"
+end
 
 
 
@@ -218,6 +226,9 @@ if __do__rabbitmq
   config.vm.provision "shell", keep_color: true, name: "rabbitMQ enable admin plugin", inline: "rabbitmq-plugins enable rabbitmq_management"
   config.vm.provision "shell", keep_color: true, inline: "systemctl disable rabbitmq-server.service"
 end
+
+
+
 
 if __do__memcached
   config.vm.provision "shell", keep_color: true, inline: "systemctl disable memcached.service"
@@ -235,6 +246,8 @@ cd /usr/src/
 wget -nv http://php.net/distributions/php-#{__php_version}.tar.bz2 -O php-#{__php_version}.tar.bz2
 tar -xjf php-#{__php_version}.tar.bz2
 cd php-#{__php_version}
+
+./configure --prefix=/usr/local/php-#{__php_version} --with-mysqli --enable-fpm --enable-opcache --enable-intl --enable-sockets --enable-pcntl --enable-gd-native-ttf --with-libdir=lib64 --enable-ftp --enable-mbstring --enable-exif --with-openssl --with-pspell --with-jpeg-dir=/usr --with-png-dir=/usr --with-freetype-dir=/usr --with-gd --enable-gd-native-ttf --enable-inline-optimization --with-curl --with-kerberos --with-gettext --with-readline --with-zlib --with-zlib-dir=/usr --with-bz2 --with-mcrypt --with-tidy --enable-zip --enable-pcntl --enable-soap --enable-calendar --enable-sockets
 
 make -j2
 make install
@@ -371,8 +384,6 @@ end
 
 
 
-
-
 if __do__nginx
   
   config.vm.provision "shell", keep_color: true, name: "setup nginx", inline: <<-SHELL
@@ -383,9 +394,9 @@ mkdir -p /vagrant/logs/nginx
 SHELL
 
 __vhosts.each do |_vhost_each|
-  
+  _hname =  _vhost_each[0]
   config.vm.provision "shell", keep_color: true, inline: __shell__setup_vhost, args: _vhost_each
-  config.vm.provision "shell", keep_color: true, inline: "echo '127.0.0.1 $1' >> /etc/hosts", args: [_vhost_each[0]]
+  config.vm.provision "shell", keep_color: true, inline: "echo '127.0.0.1 #{_hname}' >> /etc/hosts"
 end
 
   
@@ -398,7 +409,6 @@ if __do__mongodb
   config.vm.provision "shell", name: "install mongodb", keep_color: true, inline: <<-SHELL
 cd /usr/src/
 
-wget -nv http://downloads.mongodb.org/linux/mongodb-linux-x86_64-amazon-3.0.6.tgz -O mongodb-linux-x86_64-amazon-3.0.6.tgz
 wget -nv #{__url_mongo_download}#{__mongo_version_download}.tgz -O #{__mongo_version_download}.tgz
 tar -xzf #{__mongo_version_download}.tgz
 cp -R #{__mongo_version_download}/ /usr/local/mongodb
@@ -422,6 +432,8 @@ SHELL
 end
 
 
+
+
 if __do__phpmyadmin
   
   config.vm.provision "shell", name: "install mongodb", keep_color: true, inline: <<-SHELL
@@ -431,7 +443,7 @@ mkdir -p /var/www/phpmyadmin/
 cd /usr/src/
 wget -nv https://files.phpmyadmin.net/phpMyAdmin/#{__phpmyadmin_version}/phpMyAdmin-#{__phpmyadmin_version}-english.tar.bz2
 tar -xjf phpMyAdmin-#{__phpmyadmin_version}-english.tar.bz2
-cp -R phpMyAdmin-#{__phpmyadmin_version}-english /var/www/phpmyadmin
+cp -R phpMyAdmin-#{__phpmyadmin_version}-english/* /var/www/phpmyadmin
 
 cd /var/www/phpmyadmin/
 
@@ -470,6 +482,8 @@ end
 
 
 
+
+
 if __do__mailcatcher
   
   config.vm.provision "shell", keep_color: true, name: "setup mailcatcher", inline: <<-SHELL
@@ -482,7 +496,6 @@ EOL
 SHELL
   
 end
-
 
 
 
