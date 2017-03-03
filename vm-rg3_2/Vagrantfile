@@ -481,7 +481,7 @@ SHELL
 cat  > /etc/nginx/conf.d/phpmyadmin.conf <<EOL
 
 server {
-    server_name vm-dev1.phpmyadmin;
+    server_name #{__name_vm}.phpmyadmin;
     access_log /vagrant/logs/nginx/phpmyadmin_access.log;
     error_log /vagrant/logs/nginx/phpmyadmin_error.log;
     root /var/www/phpmyadmin;
