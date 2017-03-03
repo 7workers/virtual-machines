@@ -3,8 +3,8 @@
 
 vagrant_root = File.dirname(__FILE__)
 
-__name_vm = "vm-dev2"
-__ip_vm = "192.168.56.139"
+__name_vm = "vm-rg3"
+__ip_vm = "192.168.56.135"
 __fname_disk = "#{vagrant_root}/#{__name_vm}-db.vdi"
 __tz = "Europe/Minsk"
 __php_version = "7.1.2"
