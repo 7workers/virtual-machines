@@ -18,7 +18,7 @@ __mongo_version_download = "mongodb-linux-x86_64-amazon-3.4.2"
 
 __phpmyadmin_version = "4.6.6"
     
-__do__net_restart = true
+__do__net_restart = false
 __do__secondary_disk = true
 __do__bootloader_setup = true
 
@@ -49,6 +49,7 @@ __vhosts = [
   ["www.ipspecs", "ipspecs/code/docroot_website"],
   ["acp.ipspecs", "ipspecs/code/docroot_acp"],
   ["clkprx.ipspecs", "ipspecs/code/docroot_clkprx"],
+  ["mon.rg", "mon/code/web"],
 ]
 
 
@@ -247,7 +248,7 @@ wget -nv http://php.net/distributions/php-#{__php_version}.tar.bz2 -O php-#{__ph
 tar -xjf php-#{__php_version}.tar.bz2
 cd php-#{__php_version}
 
-./configure --prefix=/usr/local/php-#{__php_version} --with-mysqli --enable-fpm --enable-opcache --enable-intl --enable-sockets --enable-pcntl --enable-gd-native-ttf --with-libdir=lib64 --enable-ftp --enable-mbstring --enable-exif --with-openssl --with-pspell --with-jpeg-dir=/usr --with-png-dir=/usr --with-freetype-dir=/usr --with-gd --enable-gd-native-ttf --enable-inline-optimization --with-curl --with-kerberos --with-gettext --with-readline --with-zlib --with-zlib-dir=/usr --with-bz2 --with-mcrypt --with-tidy --enable-zip --enable-pcntl --enable-soap --enable-calendar --enable-sockets
+./configure --prefix=/usr/local/php-#{__php_version} --with-mysqli --with-pdo-mysql --enable-fpm --enable-opcache --enable-intl --enable-sockets --enable-pcntl --enable-gd-native-ttf --with-libdir=lib64 --enable-ftp --enable-mbstring --enable-exif --with-openssl --with-pspell --with-jpeg-dir=/usr --with-png-dir=/usr --with-freetype-dir=/usr --with-gd --enable-gd-native-ttf --enable-inline-optimization --with-curl --with-kerberos --with-gettext --with-readline --with-zlib --with-zlib-dir=/usr --with-bz2 --with-mcrypt --with-tidy --enable-zip --enable-pcntl --enable-soap --enable-calendar --enable-sockets
 
 make -j2
 make install
@@ -609,6 +610,7 @@ end
 config.vm.provision "shell", keep_color: true, inline: "echo ''"
 config.vm.provision "shell", keep_color: true, inline: "echo ''"
 config.vm.provision "shell", keep_color: true, inline: "echo 'provision is done. do vagrant ssh to check VM. do vagrant reload before proceeding'"
+config.vm.provision "shell", keep_color: true, inline: "echo 'add to hosts file: #{__all_hosts}'"
 config.vm.provision "shell", keep_color: true, inline: "echo ''"
 
   
