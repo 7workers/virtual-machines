@@ -38,6 +38,10 @@ __vhosts = [
   ["acps.rg", "fdt/code/docroot_acps"],
   ["www.rg", "fdt/code/docroot_www"],
   ["api.rg", "fdt/code/docroot_api"],
+  ["acp.hvr", "fdt/code/docroot_acp"],
+  ["acps.hvr", "fdt/code/docroot_acps"],
+  ["www.hvr", "fdt/code/docroot_www"],
+  ["api.hvr", "fdt/code/docroot_api"],
   ["acp.vme", "vme/code/docroot_acp"],
   ["api.vme", "vme/code/docroot_api"],
   ["www.vme", "vme/code/docroot_website"],
@@ -95,6 +99,7 @@ Vagrant.configure(2) do |config|
   config.vm.synced_folder "#{vagrant_root}/pmt",       "/vagrant/pmt",     create: true
   config.vm.synced_folder "#{vagrant_root}/ipspecs",   "/vagrant/ipspecs", create: true
   config.vm.synced_folder "#{vagrant_root}/vme",       "/vagrant/vme",     create: true
+  config.vm.synced_folder "#{vagrant_root}/hvr",       "/vagrant/hvr",     create: true
   config.vm.synced_folder "#{vagrant_root}/shared",    "/vagrant/shared",  create: true
   config.vm.synced_folder "#{vagrant_root}/xdebug",    "/vagrant/xdebug",  create: true
   
