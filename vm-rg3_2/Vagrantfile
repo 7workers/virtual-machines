@@ -205,6 +205,7 @@ end
 
 if __do__mysql
   config.vm.provision "shell", keep_color: true, name: "install mariadb", inline: "dnf install -y mysql-server"
+  config.vm.provision "shell", keep_color: true, name: "install mariadb service", inline: "systemctl enable mysqld.service"	
 end
 
 if __do__php
@@ -600,7 +601,7 @@ if __do__tor
 end
 
 if __do__mysql
-  config.vm.provision "shell", name: "start mariadb", keep_color: true, run: "always", inline: "systemctl start mariadb.service"
+  config.vm.provision "shell", name: "start mariadb", keep_color: true, run: "always", inline: "systemctl start mysqld.service"
 end
 
 if __do__mongodb
