@@ -209,7 +209,7 @@ if __do__mysql
 end
 
 if __do__php
-  config.vm.provision "shell", keep_color: true, name: "install PHP dependences", inline: "dnf install -y git gcc gcc-c++ libxml2-devel pkgconfig openssl-devel bzip2-devel curl-devel libpng-devel libjpeg-devel libXpm-devel freetype-devel gmp-devel libmcrypt-devel aspell-devel recode-devel autoconf bison re2c libicu-devel readline-devel libtidy-devel libmemcached-devel librabbitmq-devel"
+  config.vm.provision "shell", keep_color: true, name: "install PHP dependences", inline: "dnf install -y git gcc gcc-c++ libxml2-devel pkgconfig openssl-devel bzip2-devel curl-devel libpng-devel libjpeg-devel libXpm-devel freetype-devel gmp-devel libmcrypt-devel aspell-devel recode-devel autoconf bison re2c libicu-devel readline-devel libtidy-devel libmemcached-devel librabbitmq-devel libc-client-devel"
 end
 
 if __do__memcached
@@ -254,7 +254,7 @@ wget -nv http://php.net/distributions/php-#{__php_version}.tar.bz2 -O php-#{__ph
 tar -xjf php-#{__php_version}.tar.bz2
 cd php-#{__php_version}
 
-./configure --prefix=/usr/local/php-#{__php_version} --with-mysqli --with-pdo-mysql --enable-fpm --enable-opcache --enable-intl --enable-sockets --enable-pcntl --enable-gd-native-ttf --with-libdir=lib64 --enable-ftp --enable-mbstring --enable-exif --with-openssl --with-pspell --with-jpeg-dir=/usr --with-png-dir=/usr --with-freetype-dir=/usr --with-gd --enable-gd-native-ttf --enable-inline-optimization --with-curl --with-kerberos --with-gettext --with-readline --with-zlib --with-zlib-dir=/usr --with-bz2 --with-mcrypt --with-tidy --enable-zip --enable-pcntl --enable-soap --enable-calendar --enable-sockets
+./configure --prefix=/usr/local/php-#{__php_version} --with-mysqli --with-pdo-mysql --enable-fpm --enable-opcache --enable-intl --enable-sockets --enable-pcntl --enable-gd-native-ttf --with-libdir=lib64 --enable-ftp --enable-mbstring --enable-exif --with-openssl --with-pspell --with-jpeg-dir=/usr --with-png-dir=/usr --with-freetype-dir=/usr --with-gd --enable-gd-native-ttf --enable-inline-optimization --with-curl --with-kerberos --with-gettext --with-readline --with-zlib --with-zlib-dir=/usr --with-bz2 --with-mcrypt --with-tidy --with-imap --with-imap-ssl --enable-zip --enable-pcntl --enable-soap --enable-calendar --enable-sockets
 
 make -j2
 make install
