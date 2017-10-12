@@ -14,9 +14,9 @@ __mongodb_php_version = "1.2.5"
 __install_extra = "words ImageMagick rrdtool"
 
 __url_mongo_download = "https://fastdl.mongodb.org/linux/"
-__mongo_version_download = "mongodb-linux-x86_64-amazon-3.4.2"
+__mongo_version_download = "mongodb-linux-x86_64-amazon-3.4.4"
 
-__phpmyadmin_version = "4.6.6"
+__phpmyadmin_version = "4.7.4"
     
 __do__net_restart = false
 __do__secondary_disk = true
