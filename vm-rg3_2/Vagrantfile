@@ -11,7 +11,7 @@ __php_version = "7.1.2"
 __amqp_version = "1.8.0"
 __mongodb_php_version = "1.2.5"
 
-__install_extra = "words ImageMagick rrdtool"
+__install_extra = "words ImageMagick rrdtool gnumeric"
 
 __url_mongo_download = "https://fastdl.mongodb.org/linux/"
 __mongo_version_download = "mongodb-linux-x86_64-amazon-3.4.4"
