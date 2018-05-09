@@ -9,12 +9,12 @@ __fname_disk = "#{vagrant_root}/#{__name_vm}-db.vdi"
 __tz = "Europe/Minsk"
 __php_version = "7.1.2"
 __amqp_version = "1.8.0"
-__mongodb_php_version = "1.2.5"
+__mongodb_php_version = "1.4.3"
 
 __install_extra = "words ImageMagick rrdtool gnumeric"
 
 __url_mongo_download = "https://fastdl.mongodb.org/linux/"
-__mongo_version_download = "mongodb-linux-x86_64-amazon-3.4.4"
+__mongo_version_download = "mongodb-linux-x86_64-amazon-3.6.4"
 
 __phpmyadmin_version = "4.7.4"
     
@@ -25,11 +25,11 @@ __do__bootloader_setup = true
 __do__rabbitmq = true
 __do__mailcatcher = true
 __do__mongodb = true
-__do__mysql = true
+__do__mysql = false
 __do__tor = true
 __do__php = true
 __do__phpunit = true
-__do__phpmyadmin = true
+__do__phpmyadmin = false
 __do__memcached = true
 __do__nginx = true
 
@@ -107,7 +107,7 @@ Vagrant.configure(2) do |config|
   
   config.vm.provider "virtualbox" do |vb|
 
-        vb.memory = "2048"
+        vb.memory = "8192"
         vb.cpus = 2
         vb.name = __name_vm
 
@@ -424,10 +424,16 @@ cp -R #{__mongo_version_download}/ /usr/local/mongodb
 
 mkdir /etc/mongodb
 cat > /etc/mongodb/standalone.conf <<EOL
-dbpath = /mnt/disk/mongodb
-storageEngine = wiredTiger
-logpath = /mnt/disk/mongodb/mongo.log
-fork = true
+storage:
+   dbPath: /mnt/disk/mongodb
+   engine: wiredTiger
+systemLog:
+   destination: file
+   path: /mnt/disk/mongodb/mongo.log
+processManagement:
+   fork: true
+net:
+   bindIpAll: true
 EOL
 
 ln -s /usr/local/mongodb/bin/mongo /usr/local/bin/mongo
