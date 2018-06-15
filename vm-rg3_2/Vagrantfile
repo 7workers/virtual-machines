@@ -32,6 +32,7 @@ __do__phpunit = true
 __do__phpmyadmin = false
 __do__memcached = true
 __do__nginx = true
+__do__supervisor = true
 
 __vhosts = [
   ["acp.rg", "fdt/code/docroot_acp"],
@@ -198,7 +199,7 @@ SHELL
 
   
 config.vm.provision "shell", keep_color: true, name: "basic system update", inline: "dnf update -y dnf*"
-config.vm.provision "shell", keep_color: true, name: "basic utilites install", inline: "dnf install -y ruby ruby-devel rubygems redhat-rpm-config bind-libs sqlite-devel nano mc nc htop psmisc telnet bind-utils elinks redhat-rpm-config bind-libs"
+config.vm.provision "shell", keep_color: true, name: "basic utilites install", inline: "dnf install -y ruby ruby-devel rubygems redhat-rpm-config bind-libs sqlite-devel nano mc nc htop psmisc telnet bind-utils elinks redhat-rpm-config bind-libs supervisor"
 config.vm.provision "shell", keep_color: true, name: "install specific apps and utils", inline: "dnf install -y #{__install_extra}"
 
 if __do__nginx
@@ -576,7 +577,19 @@ SHELL
 
 
 
+if __do__supervisor
+  
+  config.vm.provision "shell", keep_color: true, name: "setup supervisor", inline: <<-SHELL
+  
+echo_supervisord_conf > /vagrant/supervisord.conf
 
+cat >> /vagrant/supervisord.conf <<EOL
+[include]
+files = */code/dev/supervisord.conf
+EOL
+SHELL
+
+end
 
 
 
@@ -620,6 +633,9 @@ if __do__mailcatcher
   config.vm.provision "shell", name: "start mailcatcher", keep_color: true, run: "always", inline: "/usr/local/bin/mailcatcher --http-ip #{__ip_vm}"
 end
 
+if __do__supervisor
+  config.vm.provision "shell", name: "start supervisord", run: "always", keep_color: true, inline: "sudo -u vagrant /usr/bin/supervisord -c /vagrant/supervisord.conf"
+end
 
 config.vm.provision "shell", keep_color: true, inline: "echo ''"
 config.vm.provision "shell", keep_color: true, inline: "echo ''"
